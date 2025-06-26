@@ -91,17 +91,16 @@ export default function Hero() {
 
             <div className="flex flex-wrap gap-4 pt-2">
               <a
-                className="group relative inline-block text-sm font-medium text-black focus:ring-3 focus:outline-hidden"
+                className="hero-button group relative inline-block text-sm font-medium text-black focus:ring-3 focus:outline-hidden"
                 href="#"
               >
-                <span className="absolute inset-0 rounded-xl border border-white"></span>
-                <span className="block border border-current rounded-xl text-xl font-mono  bg-white px-12 py-3 transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1">
+                <span className="absolute inset-0 rounded-xl border border-white transition-transform duration-200 group-hover:translate-x-1 group-hover:translate-y-1"></span>
+                <span className="block border border-current rounded-xl text-xl font-mono bg-white px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
                   Start Campaign
                 </span>
               </a>
             </div>
           </div>
-
 
           <div className="flex justify-center lg:justify-end">
             <div className="w-full h-full lg:h-[500px]">

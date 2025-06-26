@@ -31,11 +31,11 @@ export default function Header() {
 
         <div className="flex items-center space-x-4">
           <a
-            className="group relative inline-block text-sm font-medium text-black focus:ring-3 focus:outline-hidden"
+            className="nav-item group relative inline-block text-sm font-medium text-black focus:ring-3 focus:outline-hidden"
             href="#"
           >
-            <span className="absolute inset-0 border border-gray-200 rounded-2xl"></span>
-            <span className="block border text-sm font-medium font-mono rounded-2xl border-gray-900 bg-white px-12 py-3 transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1">
+            <span className="absolute inset-0 border border-gray-200 rounded-2xl transition-transform duration-200 group-hover:translate-x-1 group-hover:translate-y-1"></span>
+            <span className="block border text-sm font-medium font-mono rounded-2xl border-gray-900 bg-white px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
               Get Started
             </span>
           </a>
