@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ArrowRight } from "lucide-react";
-import { MorphingText } from "@/components/magicui/morphing-text";
+import { MorphingText } from "@/components/ui/morphing-text";
 import dynamic from "next/dynamic";
 
 export default function Hero() {

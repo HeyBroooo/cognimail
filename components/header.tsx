@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { SparklesText } from "@/components/magicui/sparkles-text";
+import { SparklesText } from "@/components/ui/sparkles-text";
 
 export default function Header() {
   const headerRef = useRef<HTMLElement>(null);
@@ -22,6 +22,11 @@ export default function Header() {
     return () => ctx.revert();
   }, []);
 
+  const goLogin = () => {
+
+    
+  }
+
   return (
     <header ref={headerRef} className="relative z-50 px-6 py-4">
       <nav className="mx-auto flex max-w-7xl items-center justify-between">
@@ -35,7 +40,9 @@ export default function Header() {
             href="#"
           >
             <span className="absolute inset-0 border border-gray-200 rounded-2xl transition-transform duration-200 group-hover:translate-x-1 group-hover:translate-y-1"></span>
-            <span className="block border text-sm font-medium font-mono rounded-2xl border-gray-900 bg-white px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
+            <span onClick={
+              goLogin
+            } className="block border text-sm font-medium font-mono rounded-2xl border-gray-900 bg-white px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
               Get Started
             </span>
           </a>

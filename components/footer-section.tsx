@@ -93,10 +93,10 @@ export default function FooterSection() {
 
   return (
     <footer ref={footerRef} className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
 
       {/* Glassmorphism background */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-gray-900/60 to-gray-800/40 backdrop-blur-3xl"></div>
+      <div className="absolute inset-0 backdrop-blur-3xl"></div>
 
       {/* Subtle pattern overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_80%,rgba(255,255,255,0.03)_0%,transparent_50%)]"></div>
@@ -164,10 +164,10 @@ export default function FooterSection() {
               <div className="w-8 h-px bg-gradient-to-r from-white/30 to-transparent"></div>
               <ul className="space-y-4">
                 <li className="flex items-center gap-3 text-gray-300/70">
-                  <div className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center">
+                  <div className="w-8 h-8 px-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center">
                     <Mail className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-sm font-light">support@cognimail.com</span>
+                  <span className="text-sm font-light">support</span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300/70">
                   <div className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center">
