@@ -138,7 +138,7 @@ export default function FAQSection() {
           <h2 className="text-4xl md:text-5xl font-light text-white mb-6 tracking-wide">Frequently Asked Questions</h2>
           <div className="w-16 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-6"></div>
           <p className="text-gray-300/80 text-lg max-w-2xl mx-auto font-light leading-relaxed">
-            Find answers to common questions about Cognimail's email services
+            Find answers to common questions about Cognimail&apos;s email services
           </p>
         </div>
 

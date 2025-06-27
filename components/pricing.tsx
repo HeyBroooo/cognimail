@@ -306,6 +306,7 @@ export default function PricingComponent() {
   const cardsRef = useRef<HTMLDivElement[]>([])
   const connectingLinesRef = useRef<SVGSVGElement>(null)
   const [activeCard, setActiveCard] = useState<number | null>(null)
+  console.log("Active Card:", activeCard)
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -480,7 +481,7 @@ export default function PricingComponent() {
             <div className="relative z-10">
               <h3 className="text-2xl font-semibold font-mono text-gray-100 mb-4">Need something custom?</h3>
               <p className="text-gray-300 font-mono mb-8">
-                Let's discuss a plan that's tailored specifically for your business needs.
+                Let&apos;s discuss a plan that&apos;s tailored specifically for your business needs.
               </p>
               <AnimatedButton className="max-w-xs mx-auto">Contact Sales</AnimatedButton>
             </div>

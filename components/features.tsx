@@ -155,8 +155,7 @@ export default function PowerfulFeatures() {
         }
       );
 
-      // Hover animations for each card
-      cardsRef.current.forEach((card, index) => {
+      cardsRef.current.forEach((card) => {
         if (!card) return;
 
         const icon = card.querySelector(".feature-icon");

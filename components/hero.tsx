@@ -8,8 +8,14 @@ import dynamic from "next/dynamic";
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
 
-  const Spline = dynamic(() => import("@splinetool/react-spline"), {
+  // Fix the dynamic import with proper default import
+  const Spline = dynamic(() => import("@splinetool/react-spline").then((mod) => ({ default: mod.default })), {
     ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-gray-900/20 rounded-xl animate-pulse flex items-center justify-center">
+        <div className="text-gray-400 font-mono">Loading 3D Scene...</div>
+      </div>
+    ),
   });
 
   useEffect(() => {
@@ -108,7 +114,6 @@ export default function Hero() {
                 scene="https://prod.spline.design/NIhQuEEATHEkqtTZ/scene.splinecode"
                 className="w-full h-full"
                 onLoad={() => console.log("Spline scene loaded")}
-                about="Spline scene for Cognimail"
                 onError={(error) => console.error("Spline error:", error)}
               />
             </div>
