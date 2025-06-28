@@ -22,10 +22,7 @@ export default function Header() {
     return () => ctx.revert();
   }, []);
 
-  const goLogin = () => {
 
-    
-  }
 
   return (
     <header ref={headerRef} className="relative z-50 px-6 py-4">
@@ -37,14 +34,13 @@ export default function Header() {
         <div className="flex items-center space-x-4">
           <a
             className="nav-item group relative inline-block text-sm font-medium text-black focus:ring-3 focus:outline-hidden"
-            href="#"
+            href="/login"
           >
             <span className="absolute inset-0 border border-gray-200 rounded-2xl transition-transform duration-200 group-hover:translate-x-1 group-hover:translate-y-1"></span>
-            <span onClick={
-              goLogin
-            } className="block border text-sm font-medium font-mono rounded-2xl border-gray-900 bg-white px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
+            <button 
+             className="block border text-sm font-medium font-mono rounded-2xl border-gray-900 bg-white px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
               Get Started
-            </span>
+            </button>
           </a>
         </div>
       </nav>

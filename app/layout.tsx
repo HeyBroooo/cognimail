@@ -15,8 +15,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CogniMail",
   description: "CogniMail - Your AI-Powered Email Service",
-  icons: {
-    icon: "/logo.jpg"
+  openGraph: {
+    title: "CogniMail",
+    description: "CogniMail - Your AI-Powered Email Service",
+    // url: "https://cognimail.com",
+    siteName: "CogniMail",
+    // images: [
+    //   {
+    //     url: "https://cognimail.com/og-image.png",
+    //     width: 1200,
+    //     height: 630,
+    //     alt: "CogniMail - Your AI-Powered Email Service",
+    //   },
+    // ],
+    locale: "en_US",
+    type: "website",
   }
 };
 
