@@ -3,20 +3,15 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ArrowRight } from "lucide-react";
 import { MorphingText } from "@/components/ui/morphing-text";
-import dynamic from "next/dynamic";
+import Spline from "@splinetool/react-spline";
+
+
+
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
 
-  // Fix the dynamic import with proper default import
-  const Spline = dynamic(() => import("@splinetool/react-spline").then((mod) => ({ default: mod.default })), {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full bg-gray-900/20 rounded-xl animate-pulse flex items-center justify-center">
-        <div className="text-gray-400 font-mono">Loading 3D Scene...</div>
-      </div>
-    ),
-  });
+
 
   useEffect(() => {
     const ctx = gsap.context(() => {
