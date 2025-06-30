@@ -147,7 +147,7 @@ export default function Login() {
               CogniMail
             </h1>
             <p className="text-gray-400 font-mono">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/signup" className="text-white hover:text-gray-300 underline">
                 Sign Up
               </Link>
