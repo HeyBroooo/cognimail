@@ -107,10 +107,16 @@ export default function Login() {
       // Store email in localStorage before redirecting
       localStorage.setItem('loginEmail', formData.email);
       router.push("/otp");
-    } catch (error: any) {
-      console.error("Error during login:", error);
-      alert(error.message || "Login failed. Please try again.");
-    }
+    } catch (error: unknown) {
+  if (error instanceof Error) {
+    console.error("Error during login:", error);
+    alert(error.message || "Login failed. Please try again.");
+  } else {
+    console.error("Unknown error during login:", error);
+    alert("An unexpected error occurred.");
+  }
+}
+
   };
 
   if (isCheckingSession) {

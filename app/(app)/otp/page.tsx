@@ -147,10 +147,16 @@ export default function OtpVerification() {
       console.log("OTP verified successfully:", data);
       localStorage.removeItem('loginEmail');
       router.push("/dashboard");
-    } catch (error: any) {
-      console.error("Error during OTP verification:", error);
-      alert(error.message || "Verification failed. Please try again.");
-    }
+    } catch (error: unknown) {
+  if (error instanceof Error) {
+    console.error("Error during login:", error);
+    alert(error.message || "Login failed. Please try again.");
+  } else {
+    console.error("Unknown error during login:", error);
+    alert("An unexpected error occurred.");
+  }
+}
+
   };
 
   const handleResendOtp = async () => {
@@ -176,11 +182,16 @@ export default function OtpVerification() {
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
       alert("OTP resent successfully!");
-    } catch (error: any) {
-      console.error("Error resending OTP:", error);
-      setIsResending(false);
-      alert(error.message || "Failed to resend OTP. Please try again.");
-    }
+    } catch (error: unknown) {
+  if (error instanceof Error) {
+    console.error("Error during login:", error);
+    alert(error.message || "Login failed. Please try again.");
+  } else {
+    console.error("Unknown error during login:", error);
+    alert("An unexpected error occurred.");
+  }
+}
+
   };
 
   if (isCheckingSession) {
