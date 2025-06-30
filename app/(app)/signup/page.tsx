@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ArrowRight, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import Link from "next/link";
-
-
+import { useRouter } from "next/navigation";
+import LoadingIndicator from "@/components/loading-indicator";
 
 export default function Signup() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -16,8 +16,12 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
   });
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const router = useRouter();
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/";
 
   useEffect(() => {
+    // GSAP animations
     const ctx = gsap.context(() => {
       gsap.from(".slide-in-left", {
         x: -100,
@@ -25,7 +29,7 @@ export default function Signup() {
         duration: 1.2,
         ease: "power3.out",
       });
-      
+
       gsap.from(".slide-in-right", {
         x: 100,
         opacity: 0,
@@ -33,7 +37,7 @@ export default function Signup() {
         ease: "power3.out",
         delay: 0.2,
       });
-      
+
       gsap.from(".fade-up", {
         y: 30,
         opacity: 0,
@@ -44,21 +48,31 @@ export default function Signup() {
       });
     }, containerRef);
 
-    return () => ctx.revert();
-  }, []);
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}auth/check-session`, {
+          method: "GET",
+          credentials: "include", // Include cookies in the request
+        });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
-      return;
-    }
-    
-    console.log("Signup attempt:", formData);
-    // // Navigate to OTP page after successful signup
-    // navigate("/otp-verification", { state: { email: formData.email } });
-  };
+        if (response.ok) {
+          const data = await response.json();
+          if (data.isLoggedIn) {
+            router.push("/dashboard"); // Redirect to dashboard if logged in
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkSession();
+
+    return () => ctx.revert();
+  }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -66,6 +80,49 @@ export default function Signup() {
       [e.target.name]: e.target.value,
     });
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    console.log("Form Data:", formData);
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+    console.log("Submitting signup form...");
+    try {
+      const response = await fetch(`${BASE_URL}auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+
+      if (!response.ok) {
+        throw new Error("Signup failed");
+      }
+
+      console.log("Signup response received");
+
+      const data = await response.json();
+      console.log("Signup successful:", data);
+      router.push("/login"); // Use router.push instead of window.location.href for SPA navigation
+    } catch (error) {
+      console.error("Error during signup:", error);
+      alert("Signup failed. Please try again.");
+    }
+  };
+
+  if (isCheckingSession) {
+    return <LoadingIndicator />;
+  }
 
   return (
     <div ref={containerRef} className="min-h-screen bg-black text-white flex">

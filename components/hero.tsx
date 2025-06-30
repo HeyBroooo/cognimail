@@ -104,7 +104,7 @@ export default function Hero() {
           </div>
 
           <div className="flex justify-center lg:justify-end">
-            <div className="w-full h-full lg:h-[500px]">
+            <div className="w-full h-full lg:h-[500px] sm:[h-96] relative cube-container overflow-hidden">
               <Spline
                 scene="https://prod.spline.design/NIhQuEEATHEkqtTZ/scene.splinecode"
                 className="w-full h-full"

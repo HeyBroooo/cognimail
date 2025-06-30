@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import LoadingIndicator from "@/components/loading-indicator";
 
 export default function Login() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -11,8 +13,12 @@ export default function Login() {
     email: "",
     password: "",
   });
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const router = useRouter();
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/";
 
   useEffect(() => {
+    // GSAP animations
     const ctx = gsap.context(() => {
       gsap.from(".slide-in-left", {
         x: -100,
@@ -20,7 +26,7 @@ export default function Login() {
         duration: 1.2,
         ease: "power3.out",
       });
-      
+
       gsap.from(".slide-in-right", {
         x: 100,
         opacity: 0,
@@ -28,7 +34,7 @@ export default function Login() {
         ease: "power3.out",
         delay: 0.2,
       });
-      
+
       gsap.from(".fade-up", {
         y: 30,
         opacity: 0,
@@ -39,14 +45,36 @@ export default function Login() {
       });
     }, containerRef);
 
-    return () => ctx.revert();
-  }, []);
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        console.log('Checking session with /check-session');
+        const response = await fetch(`${BASE_URL}auth/check-session`, {
+          method: "GET",
+          credentials: "include",
+        });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Login attempt:", formData);
-    window.location.href = "/otp";
-  };
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Session check response:', data);
+          if (data.isLoggedIn) {
+            console.log('User already logged in, redirecting to dashboard');
+            router.push("/dashboard");
+          }
+        } else {
+          console.error('Session check failed:', response.status);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkSession();
+
+    return () => ctx.revert();
+  }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -55,9 +83,42 @@ export default function Login() {
     });
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Login attempt with:", formData);
+    try {
+      const response = await fetch(`${BASE_URL}auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Login failed:", errorData);
+        throw new Error(errorData.error || "Login failed");
+      }
+
+      const data = await response.json();
+      console.log("Login successful:", data);
+
+      // Store email in localStorage before redirecting
+      localStorage.setItem('loginEmail', formData.email);
+      router.push("/otp");
+    } catch (error: any) {
+      console.error("Error during login:", error);
+      alert(error.message || "Login failed. Please try again.");
+    }
+  };
+
+  if (isCheckingSession) {
+    return <LoadingIndicator />;
+  }
+
   return (
     <div ref={containerRef} className="min-h-screen bg-black text-white flex">
-      {/* Left Side - Illustration */}
       <div className="slide-in-left hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 opacity-90"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1),transparent_50%)]"></div>
@@ -74,12 +135,10 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
       <div className="slide-in-right w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Header */}
           <div className="fade-up text-center lg:text-left">
-            <Link  href={"/"} className="inline-block font-mono text-2xl font-bold mb-8">
+            <Link href="/" className="inline-block font-mono text-2xl font-bold mb-8">
               Cogni<span className="text-gray-400">Mail</span>
             </Link>
             <h1 className="text-3xl font-mono font-bold mb-2">
@@ -95,7 +154,6 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="fade-up">
               <label htmlFor="email" className="block text-sm font-mono font-medium mb-2">

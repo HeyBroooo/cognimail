@@ -3,16 +3,27 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ArrowRight, Shield, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import LoadingIndicator from "@/components/loading-indicator";
 
 export default function OtpVerification() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isResending, setIsResending] = useState(false);
   const [timer, setTimer] = useState(60);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  
+  const [email, setEmail] = useState("");
+  const router = useRouter();
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/";
 
   useEffect(() => {
+    // Retrieve email from localStorage
+    const storedEmail = localStorage.getItem('loginEmail') || 'your@email.com';
+    setEmail(storedEmail);
+    console.log('Retrieved email from localStorage:', storedEmail);
+
+    // GSAP animations
     const ctx = gsap.context(() => {
       gsap.from(".slide-in-left", {
         x: -100,
@@ -20,7 +31,7 @@ export default function OtpVerification() {
         duration: 1.2,
         ease: "power3.out",
       });
-      
+
       gsap.from(".slide-in-right", {
         x: 100,
         opacity: 0,
@@ -28,7 +39,7 @@ export default function OtpVerification() {
         ease: "power3.out",
         delay: 0.2,
       });
-      
+
       gsap.from(".fade-up", {
         y: 30,
         opacity: 0,
@@ -37,7 +48,7 @@ export default function OtpVerification() {
         delay: 0.5,
         ease: "power2.out",
       });
-      
+
       gsap.from(".otp-input", {
         scale: 0.8,
         opacity: 0,
@@ -48,8 +59,36 @@ export default function OtpVerification() {
       });
     }, containerRef);
 
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        console.log('Checking session with /check-session');
+        const response = await fetch(`${BASE_URL}auth/check-session`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Session check response:', data);
+          if (data.isLoggedIn) {
+            console.log('User already logged in, redirecting to dashboard');
+            router.push("/dashboard");
+          }
+        } else {
+          console.error('Session check failed:', response.status);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkSession();
+
     return () => ctx.revert();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (timer > 0) {
@@ -62,12 +101,11 @@ export default function OtpVerification() {
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -79,32 +117,78 @@ export default function OtpVerification() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const otpCode = otp.join("");
-    
-    if (otpCode.length !== 6) {
-      alert("Please enter the complete OTP");
+    const code = otp.join("");
+    console.log("OTP Code:", code);
+    if (code.length < 6) {
+      alert("Please enter a complete 6-digit code.");
       return;
     }
-    
-    console.log("OTP verification:", otpCode);
-    window.location.href = "/dashboard";
+
+    console.log("Verifying OTP for email:", email);
+    try {
+      const response = await fetch(`${BASE_URL}auth/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, otp: code }),
+      });
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Verification failed:", errorData);
+        throw new Error(errorData.error || "Verification failed");
+      }
+
+      const data = await response.json();
+      console.log("OTP verified successfully:", data);
+      localStorage.removeItem('loginEmail');
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Error during OTP verification:", error);
+      alert(error.message || "Verification failed. Please try again.");
+    }
   };
 
   const handleResendOtp = async () => {
     setIsResending(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsResending(false);
-    setTimer(60);
-    setOtp(["", "", "", "", "", ""]);
-    inputRefs.current[0]?.focus();
+    try {
+      console.log('Resending OTP for email:', email);
+      const response = await fetch(`${BASE_URL}auth/resend-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to resend OTP:", errorData);
+        throw new Error(errorData.error || "Failed to resend OTP");
+      }
+
+      setIsResending(false);
+      setTimer(60);
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+      alert("OTP resent successfully!");
+    } catch (error: any) {
+      console.error("Error resending OTP:", error);
+      setIsResending(false);
+      alert(error.message || "Failed to resend OTP. Please try again.");
+    }
   };
+
+  if (isCheckingSession) {
+    return <LoadingIndicator />;
+  }
 
   return (
     <div ref={containerRef} className="min-h-screen bg-black text-white flex">
-      {/* Left Side - Illustration */}
       <div className="slide-in-left hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-500 via-teal-500 to-blue-500 opacity-90"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_50%)]"></div>
@@ -121,10 +205,8 @@ export default function OtpVerification() {
         </div>
       </div>
 
-      {/* Right Side - OTP Form */}
       <div className="slide-in-right w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Header */}
           <div className="fade-up text-center lg:text-left">
             <Link href="/" className="inline-block font-mono text-2xl font-bold mb-8">
               Cogni<span className="text-gray-400">Mail</span>
@@ -135,11 +217,10 @@ export default function OtpVerification() {
             <p className="text-gray-400 font-mono">
               We've sent a 6-digit code to
               <br />
-              <span className="text-white">your@email.com</span>
+              <span className="text-white">{email}</span>
             </p>
           </div>
 
-          {/* OTP Form */}
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="fade-up">
               <label className="block text-sm font-mono font-medium mb-4">
@@ -205,6 +286,7 @@ export default function OtpVerification() {
               <button
                 onClick={handleResendOtp}
                 className="underline hover:text-white transition-colors"
+                disabled={isResending}
               >
                 try again
               </button>
