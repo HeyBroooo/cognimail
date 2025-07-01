@@ -5,13 +5,8 @@ import { ArrowRight } from "lucide-react";
 import { MorphingText } from "@/components/ui/morphing-text";
 import Spline from "@splinetool/react-spline";
 
-
-
-
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
-
-
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -57,10 +52,11 @@ export default function Hero() {
   }, []);
 
   return (
-    <section ref={heroRef} className="relative px-6 py-20 md:py-32">
+    <section ref={heroRef} className="relative px-6 py-12 md:py-20">
       <div className="mx-auto max-w-7xl">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div className="flex flex-col justify-center space-y-8">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[70vh] lg:min-h-[80vh]">
+          {/* Content Section */}
+          <div className="flex flex-col justify-center space-y-6 md:space-y-8 order-2 lg:order-1">
             <div className="announcement">
               <div className="inline-flex items-center rounded-full border border-gray-800 bg-gray-900/50 px-4 py-2 text-sm backdrop-blur-sm">
                 <span className="text-gray-300 font-mono">
@@ -70,8 +66,8 @@ export default function Hero() {
               </div>
             </div>
 
-            <div className="space-y-6">
-              <h1 className="hero-title font-mono text-5xl md:text-7xl font-bold tracking-tight leading-tight text-balance">
+            <div className="space-y-4 md:space-y-6">
+              <h1 className="hero-title font-mono text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-tight text-balance">
                 Email For
                 <br />
                 <MorphingText
@@ -80,11 +76,11 @@ export default function Hero() {
                 />
               </h1>
 
-              <div className="hero-subtitle space-y-3">
-                <p className="text-lg font-mono text-gray-400 max-w-lg">
+              <div className="hero-subtitle space-y-2 md:space-y-3">
+                <p className="text-base md:text-lg font-mono text-gray-400 max-w-lg">
                   Verify Your Bulk Emails, Build Template And Start Campaign
                 </p>
-                <p className="text-lg font-mono text-gray-400 max-w-lg">
+                <p className="text-base md:text-lg font-mono text-gray-400 max-w-lg">
                   Build Template, Verify Bulk Emails and Start Your Personal Campaign
                 </p>
               </div>
@@ -96,21 +92,24 @@ export default function Hero() {
                 href="login"
               >
                 <span className="absolute inset-0 rounded-xl border border-white transition-transform duration-200 group-hover:translate-x-1 group-hover:translate-y-1"></span>
-                <span className="block border border-current rounded-xl text-xl font-mono bg-white px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
+                <span className="block border border-current rounded-xl text-lg md:text-xl font-mono bg-white px-8 md:px-12 py-2.5 md:py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
                   Start Campaign
                 </span>
               </a>
             </div>
           </div>
 
-          <div className="flex justify-center lg:justify-end">
-            <div className="w-full h-full lg:h-[500px] sm:[h-96] relative cube-container overflow-hidden">
-              <Spline
-                scene="https://prod.spline.design/NIhQuEEATHEkqtTZ/scene.splinecode"
-                className="w-full h-full"
-                onLoad={() => console.log("Spline scene loaded")}
-                onError={(error) => console.error("Spline error:", error)}
-              />
+          {/* 3D Cube Section */}
+          <div className="flex justify-center lg:justify-end order-1 lg:order-2">
+            <div className="w-full max-w-md md:max-w-lg lg:max-w-none lg:w-full">
+              <div className="aspect-square w-full max-h-[300px] sm:max-h-[350px] md:max-h-[400px] lg:max-h-[500px] lg:h-[500px] relative cube-container overflow-hidden rounded-lg">
+                <Spline
+                  scene="https://prod.spline.design/NIhQuEEATHEkqtTZ/scene.splinecode"
+                  className="w-full h-full object-contain"
+                  onLoad={() => console.log("Spline scene loaded")}
+                  onError={(error) => console.error("Spline error:", error)}
+                />
+              </div>
             </div>
           </div>
         </div>

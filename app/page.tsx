@@ -34,12 +34,19 @@ export default function Home() {
         {/* Background Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
 
-        <Header />
-        <Hero />
-        
-        <div className="relative">
-          <PowerfulFeatures />
+        {/* Header with better z-index */}
+        <div className="relative z-10">
+          <Header />
+        </div>
 
+        {/* Hero Section */}
+        <div className="relative z-0">
+          <Hero />
+        </div>
+        
+        {/* Other Sections */}
+        <div className="relative z-10">
+          <PowerfulFeatures />
           <PricingComponent />
           <FAQSection />
           <FooterSection />
