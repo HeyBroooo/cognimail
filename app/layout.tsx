@@ -51,7 +51,14 @@ export const metadata: Metadata = {
     description: "CogniMail - Your AI-Powered Email Service",
     site: "@CogniMail",
     creator: "@Firmware_X",
-    images: ["/cube-icon.ico"],
+    images: [
+      {
+        url: "/cube-icon.ico",
+        width: 1200,
+        height: 630,
+        alt: "CogniMail Twitter Image",
+      }
+      ],
   },
 };
 
