@@ -1,27 +1,14 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { ArrowRight, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
+import { User } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import LoadingIndicator from "@/components/loading-indicator";
+import { SignUp } from "@clerk/nextjs";
 
 export default function Signup() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const router = useRouter();
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/";
 
   useEffect(() => {
-    // GSAP animations
     const ctx = gsap.context(() => {
       gsap.from(".slide-in-left", {
         x: -100,
@@ -48,85 +35,11 @@ export default function Signup() {
       });
     }, containerRef);
 
-    // Check if user is already logged in
-    const checkSession = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}auth/check-session`, {
-          method: "GET",
-          credentials: "include", // Include cookies in the request
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.isLoggedIn) {
-            router.push("/dashboard"); // Redirect to dashboard if logged in
-          }
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-      } finally {
-        setIsCheckingSession(false);
-      }
-    };
-
-    checkSession();
-
     return () => ctx.revert();
-  }, [router]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    console.log("Form Data:", formData);
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-    console.log("Submitting signup form...");
-    try {
-      const response = await fetch(`${BASE_URL}auth/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-
-      console.log("Response status:", response.status);
-      console.log("Response headers:", response.headers);
-
-      if (!response.ok) {
-        throw new Error("Signup failed");
-      }
-
-      console.log("Signup response received");
-
-      const data = await response.json();
-      console.log("Signup successful:", data);
-      router.push("/login"); // Use router.push instead of window.location.href for SPA navigation
-    } catch (error) {
-      console.error("Error during signup:", error);
-      alert("Signup failed. Please try again.");
-    }
-  };
-
-  if (isCheckingSession) {
-    return <LoadingIndicator />;
-  }
+  }, []);
 
   return (
     <div ref={containerRef} className="min-h-screen bg-black text-white flex">
-      {/* Left Side - Illustration */}
       <div className="slide-in-left hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 opacity-90"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.1),transparent_50%)]"></div>
@@ -143,10 +56,8 @@ export default function Signup() {
         </div>
       </div>
 
-      {/* Right Side - Signup Form */}
       <div className="slide-in-right w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Header */}
           <div className="fade-up text-center lg:text-left">
             <Link href="/" className="inline-block font-mono text-2xl font-bold mb-8">
               Cogni<span className="text-gray-400">Mail</span>
@@ -162,106 +73,38 @@ export default function Signup() {
             </p>
           </div>
 
-          {/* Signup Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="fade-up">
-              <label htmlFor="name" className="block text-sm font-mono font-medium mb-2">
-                Full Name *
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors"
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="fade-up">
-              <label htmlFor="email" className="block text-sm font-mono font-medium mb-2">
-                E-mail address *
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="fade-up">
-              <label htmlFor="password" className="block text-sm font-mono font-medium mb-2">
-                Password *
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors"
-                  placeholder="Create a password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="fade-up">
-              <label htmlFor="confirmPassword" className="block text-sm font-mono font-medium mb-2">
-                Confirm Password *
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors"
-                  placeholder="Confirm your password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="fade-up w-full bg-white text-black font-mono font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center group"
-            >
-              Create Account
-              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
+          <div className="fade-up">
+            <SignUp
+              routing="path"
+              path="/signup"
+              signInUrl="/login"
+              afterSignUpUrl="/dashboard"
+              appearance={{
+                elements: {
+                  formButtonPrimary:
+                    "bg-white text-black font-mono font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-200",
+                  socialButtonsBlockButton:
+                    "bg-gray-900 border border-gray-700 text-white font-mono py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2",
+                  socialButtonsBlockButton__google: "text-white",
+                  card: "bg-gray-900 border border-gray-700 rounded-lg shadow-none",
+                  header: "hidden",
+                  footer: "hidden",
+                  logoBox: "hidden",
+                  formFieldLabel: "font-mono text-sm text-white mb-2",
+                  formFieldInput:
+                    "bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors",
+                  formField: "mb-4",
+                },
+                variables: {
+                  colorPrimary: "#ffffff",
+                  colorText: "#ffffff",
+                  colorBackground: "#1f1f1f",
+                  colorInputBackground: "#1f1f1f",
+                  colorInputText: "#ffffff",
+                },
+              }}
+            />
+          </div>
 
           <div className="fade-up text-center">
             <p className="text-xs font-mono text-gray-400">

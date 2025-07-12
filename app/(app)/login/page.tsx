@@ -1,24 +1,14 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Mail } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import LoadingIndicator from "@/components/loading-indicator";
+import { SignIn } from "@clerk/nextjs";
 
 export default function Login() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const router = useRouter();
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/";
 
   useEffect(() => {
-    // GSAP animations
     const ctx = gsap.context(() => {
       gsap.from(".slide-in-left", {
         x: -100,
@@ -45,83 +35,8 @@ export default function Login() {
       });
     }, containerRef);
 
-    // Check if user is already logged in
-    const checkSession = async () => {
-      try {
-        console.log('Checking session with /check-session');
-        const response = await fetch(`${BASE_URL}auth/check-session`, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Session check response:', data);
-          if (data.isLoggedIn) {
-            console.log('User already logged in, redirecting to dashboard');
-            router.push("/dashboard");
-          }
-        } else {
-          console.error('Session check failed:', response.status);
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-      } finally {
-        setIsCheckingSession(false);
-      }
-    };
-
-    checkSession();
-
     return () => ctx.revert();
-  }, [router]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Login attempt with:", formData);
-    try {
-      const response = await fetch(`${BASE_URL}auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Login failed:", errorData);
-        throw new Error(errorData.error || "Login failed");
-      }
-
-      const data = await response.json();
-      console.log("Login successful:", data);
-
-      // Store email in localStorage before redirecting
-      localStorage.setItem('loginEmail', formData.email);
-      router.push("/otp");
-    } catch (error: unknown) {
-  if (error instanceof Error) {
-    console.error("Error during login:", error);
-    alert(error.message || "Login failed. Please try again.");
-  } else {
-    console.error("Unknown error during login:", error);
-    alert("An unexpected error occurred.");
-  }
-}
-
-  };
-
-  if (isCheckingSession) {
-    return <LoadingIndicator />;
-  }
+  }, []);
 
   return (
     <div ref={containerRef} className="min-h-screen bg-black text-white flex">
@@ -153,73 +68,45 @@ export default function Login() {
               CogniMail
             </h1>
             <p className="text-gray-400 font-mono">
-              Don&apos;t have an account?{" "}
+              Don't have an account?{" "}
               <Link href="/signup" className="text-white hover:text-gray-300 underline">
                 Sign Up
               </Link>
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="fade-up">
-              <label htmlFor="email" className="block text-sm font-mono font-medium mb-2">
-                E-mail address *
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="fade-up">
-              <label htmlFor="password" className="block text-sm font-mono font-medium mb-2">
-                Password *
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors"
-                  placeholder="Enter your password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="fade-up">
-              <Link href="/forgot-password" className="text-sm font-mono text-gray-400 hover:text-white transition-colors">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              className="fade-up w-full bg-white text-black font-mono font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center group"
-            >
-              Login
-              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
+          <div className="fade-up">
+            <SignIn
+              routing="path"
+              path="/login"
+              signUpUrl="/signup"
+              afterSignInUrl="/dashboard"
+              appearance={{
+                elements: {
+                  formButtonPrimary:
+                    "bg-white text-black font-mono font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors duration-200",
+                  socialButtonsBlockButton:
+                    "bg-gray-900 border border-gray-700 text-white font-mono py-3 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2",
+                  socialButtonsBlockButton__google: "text-white",
+                  card: "bg-gray-900 border border-gray-700 rounded-lg shadow-none",
+                  header: "hidden",
+                  footer: "hidden",
+                  logoBox: "hidden",
+                  formFieldLabel: "font-mono text-sm text-white mb-2",
+                  formFieldInput:
+                    "bg-gray-900 border border-gray-700 rounded-lg font-mono text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors",
+                  formField: "mb-4",
+                },
+                variables: {
+                  colorPrimary: "#ffffff",
+                  colorText: "#ffffff",
+                  colorBackground: "#1f1f1f",
+                  colorInputBackground: "#1f1f1f",
+                  colorInputText: "#ffffff",
+                },
+              }}
+            />
+          </div>
 
           <div className="fade-up text-center">
             <p className="text-xs font-mono text-gray-400">

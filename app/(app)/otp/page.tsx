@@ -15,7 +15,7 @@ export default function OtpVerification() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [email, setEmail] = useState("");
   const router = useRouter();
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/";
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000/";
 
   useEffect(() => {
     // Retrieve email from localStorage
@@ -63,7 +63,7 @@ export default function OtpVerification() {
     const checkSession = async () => {
       try {
         console.log('Checking session with /check-session');
-        const response = await fetch(`${BASE_URL}auth/check-session`, {
+        const response = await fetch(`${BASE_URL}api/auth/check-session`, {
           method: "GET",
           credentials: "include",
         });
@@ -120,55 +120,62 @@ export default function OtpVerification() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    console.log("OTP Code:", code);
+    
     if (code.length < 6) {
       alert("Please enter a complete 6-digit code.");
       return;
     }
 
-    console.log("Verifying OTP for email:", email);
+    const email = localStorage.getItem('loginEmail');
+
     try {
-      const response = await fetch(`${BASE_URL}auth/verify-otp`, {
+      const response = await fetch(`${BASE_URL}api/auth/verify-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, otp: code }),
+        credentials: "include",
       });
-      console.log("Response status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Verification failed:", errorData);
         throw new Error(errorData.error || "Verification failed");
       }
 
       const data = await response.json();
       console.log("OTP verified successfully:", data);
+      
+      // Clean up localStorage
       localStorage.removeItem('loginEmail');
-      router.push("/dashboard");
-    } catch (error: unknown) {
-  if (error instanceof Error) {
-    console.error("Error during login:", error);
-    alert(error.message || "Login failed. Please try again.");
-  } else {
-    console.error("Unknown error during login:", error);
-    alert("An unexpected error occurred.");
-  }
-}
-
+      
+      if (data.redirect) {
+        router.push(data.redirect);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error during verification:", error);
+        alert(error.message || "Verification failed. Please try again.");
+      } else {
+        console.error("Unknown error during verification:", error);
+        alert("An unexpected error occurred.");
+      }
+    }
   };
 
   const handleResendOtp = async () => {
     setIsResending(true);
     try {
       console.log('Resending OTP for email:', email);
-      const response = await fetch(`${BASE_URL}auth/resend-otp`, {
+      const response = await fetch(`${BASE_URL}api/auth/resend-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -182,16 +189,17 @@ export default function OtpVerification() {
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
       alert("OTP resent successfully!");
-    } catch (error: unknown) {
-  if (error instanceof Error) {
-    console.error("Error during login:", error);
-    alert(error.message || "Login failed. Please try again.");
-  } else {
-    console.error("Unknown error during login:", error);
-    alert("An unexpected error occurred.");
-  }
-}
-
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error during OTP resend:", error);
+        alert(error.message || "Failed to resend OTP. Please try again.");
+      } else {
+        console.error("Unknown error during OTP resend:", error);
+        alert("An unexpected error occurred.");
+      }
+    } finally {
+      setIsResending(false);
+    }
   };
 
   if (isCheckingSession) {
@@ -210,7 +218,7 @@ export default function OtpVerification() {
             </div>
             <h2 className="text-4xl font-mono font-bold">Verify Your Email</h2>
             <p className="text-xl font-mono text-white/80 max-w-md">
-              We&apos;ve sent a verification code to secure your account
+              We've sent a verification code to secure your account
             </p>
           </div>
         </div>
@@ -226,7 +234,7 @@ export default function OtpVerification() {
               Enter Verification Code
             </h1>
             <p className="text-gray-400 font-mono">
-              We&apos;ve sent a 6-digit code to
+              We've sent a 6-digit code to
               <br />
               <span className="text-white">{email}</span>
             </p>
@@ -293,7 +301,7 @@ export default function OtpVerification() {
 
           <div className="fade-up text-center">
             <p className="text-xs font-mono text-gray-400">
-              Didn&apos;t receive the code? Check your spam folder or{" "}
+              Didn't receive the code? Check your spam folder or{" "}
               <button
                 onClick={handleResendOtp}
                 className="underline hover:text-white transition-colors"

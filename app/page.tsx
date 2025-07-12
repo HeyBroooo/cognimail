@@ -7,6 +7,7 @@ import PowerfulFeatures from "@/components/features";
 import PricingComponent from "@/components/pricing";
 import FAQSection from "@/components/faq-section";
 import FooterSection from "@/components/footer-section";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 export default function Home() {
   const mainRef = useRef<HTMLElement>(null);
@@ -41,7 +42,12 @@ export default function Home() {
 
         {/* Hero Section */}
         <div className="relative z-0">
-          <Hero />
+          <SignedIn>
+            <Hero />
+          </SignedIn>
+          <SignedOut>
+            <Hero />
+          </SignedOut>
         </div>
         
         {/* Other Sections */}
