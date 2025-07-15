@@ -182,7 +182,7 @@ export default function DashboardLayout({
                   {sidebarItems.find((item) => item.href === pathname)?.label || "Dashboard"}
                 </h1>
                 <p className="text-sm text-gray-400 hidden sm:block">
-                  Welcome back! Here's what's happening with your campaigns.
+                  Welcome back! Here&apos;s what&apos;s happening with your campaigns.
                 </p>
               </div>
             </div>

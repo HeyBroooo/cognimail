@@ -53,7 +53,6 @@ export default function Dashboard() {
     return () => ctx.revert()
   }, [])
 
-  const usagePercentage = (stats.emailsThisMonth / stats.monthlyLimit) * 100
 
   return (
     <div ref={containerRef} className="space-y-6">

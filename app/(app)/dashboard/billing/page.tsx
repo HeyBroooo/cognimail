@@ -85,7 +85,7 @@ export default function Billing() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-white">Current Plan: {currentPlan}</h3>
-            <p className="text-gray-400">You're currently on the {currentPlan} plan</p>
+            <p className="text-gray-400">You&apos;re currently on the {currentPlan} plan</p>
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-white">

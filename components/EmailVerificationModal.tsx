@@ -172,7 +172,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
       currency: "INR",
       name: "CogniMail",
       description: "Email Validation Payment",
-      handler: async (response: any) => {
+      handler: async () => {
         setShowPayment(false)
         if (file && listTitle) {
           await startProcess(file, listTitle.trim())
@@ -453,7 +453,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     <div className="flex items-center gap-3">
                       <Activity className="w-5 h-5 text-lime-400 animate-pulse" />
                       <span className="text-sm font-medium text-gray-300">
-                        {progress}% Complete • Processing "{backgroundListTitle}"
+                        {progress}% Complete&quot; Processing "{backgroundListTitle}"
                       </span>
                     </div>
                     <button
@@ -476,7 +476,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                   </div>
                   <h3 className="text-xl font-bold text-gray-200 mb-2">Upgrade Required</h3>
                   <p className="text-gray-400 mb-6">
-                    You've reached your free tier limit. Upgrade to continue validating emails with our premium AI
+                    You&quot;`ve reached your free tier limit. Upgrade to continue validating emails with our premium AI
                     engine.
                   </p>
                   <button

@@ -218,7 +218,7 @@ export default function OtpVerification() {
             </div>
             <h2 className="text-4xl font-mono font-bold">Verify Your Email</h2>
             <p className="text-xl font-mono text-white/80 max-w-md">
-              We've sent a verification code to secure your account
+              We&apos;ve sent a verification code to secure your account
             </p>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function OtpVerification() {
               Enter Verification Code
             </h1>
             <p className="text-gray-400 font-mono">
-              We've sent a 6-digit code to
+              We&apos;ve sent a 6-digit code to
               <br />
               <span className="text-white">{email}</span>
             </p>
@@ -301,7 +301,7 @@ export default function OtpVerification() {
 
           <div className="fade-up text-center">
             <p className="text-xs font-mono text-gray-400">
-              Didn't receive the code? Check your spam folder or{" "}
+              Didn&apos;t receive the code? Check your spam folder or{" "}
               <button
                 onClick={handleResendOtp}
                 className="underline hover:text-white transition-colors"
