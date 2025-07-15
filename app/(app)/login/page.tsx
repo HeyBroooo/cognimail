@@ -4,6 +4,7 @@ import { gsap } from "gsap";
 import { Mail } from "lucide-react";
 import Link from "next/link";
 import { SignIn } from "@clerk/nextjs";
+import LoadingIndicator from "@/components/loading-indicator";
 
 export default function Login() {
   const containerRef = useRef<HTMLDivElement>(null);

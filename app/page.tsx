@@ -9,6 +9,7 @@ import FAQSection from "@/components/faq-section";
 import FooterSection from "@/components/footer-section";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 
+
 export default function Home() {
   const mainRef = useRef<HTMLElement>(null);
 

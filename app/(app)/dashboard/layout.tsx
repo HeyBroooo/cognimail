@@ -1,26 +1,15 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import type React from "react"
 import { gsap } from "gsap"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
-import {
-  LayoutDashboard,
-  FileText,
-  Users,
-  Gift,
-  CreditCard,
-  Zap,
-  LogOut,
-  Menu,
-  X,
-  Bell,
-  Settings,
-  Search,
-  User,
-} from "lucide-react"
+import { LayoutDashboard, FileText, Users, Gift, CreditCard, Zap, LogOut, Menu, X, Bell, Settings } from "lucide-react"
+import { useUser, useClerk } from "@clerk/nextjs"
+import LoadingIndicator from "@/components/loading-indicator"
+import EmailVerificationModal from "@/components/EmailVerificationModal"
+import FloatingProgressIndicator from "@/components/FloatingProgressIndicator"
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
@@ -39,11 +28,25 @@ export default function DashboardLayout({
   const containerRef = useRef<HTMLDivElement>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const { user, isLoaded, isSignedIn } = useUser()
+  const { signOut } = useClerk()
+
+  // Request notification permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission()
+    }
+  }, [])
 
   useEffect(() => {
+    // Redirect to login if user is not signed in
+    if (isLoaded && !isSignedIn) {
+      router.push("/login")
+    }
+
     const ctx = gsap.context(() => {
       // Reset and animate sidebar items
       gsap.set(".nav-item", { x: 0, opacity: 1 })
@@ -64,11 +67,27 @@ export default function DashboardLayout({
     }, containerRef)
 
     return () => ctx.revert()
-  }, [pathname])
+  }, [pathname, isLoaded, isSignedIn, router])
 
-  const handleLogout = () => {
-    localStorage.clear()
+  const handleLogout = async () => {
+    await signOut()
     router.push("/")
+  }
+
+  const openVerifyEmail = () => {
+    setIsVerifyModalOpen(true)
+  }
+
+  const handlePaymentSuccess = useCallback(() => {
+    console.log("Payment successful")
+  }, [])
+
+  const handleMaximizeModal = () => {
+    setIsVerifyModalOpen(true)
+  }
+
+  if (!isLoaded) {
+    return <LoadingIndicator />
   }
 
   return (
@@ -104,7 +123,6 @@ export default function DashboardLayout({
             {sidebarItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
-
               return (
                 <Link
                   key={item.href}
@@ -127,11 +145,13 @@ export default function DashboardLayout({
           <div className="p-4 border-t border-gray-700/50">
             <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-700/50 transition-colors mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white" />
+                <Users className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">John Doe</p>
-                <p className="text-xs text-gray-400">Pro Plan</p>
+                <p className="text-sm font-medium text-white truncate">
+                  {user?.fullName || user?.primaryEmailAddress?.emailAddress || "User"}
+                </p>
+                <p className="text-xs text-gray-400">Free Plan</p>
               </div>
             </div>
             <button
@@ -166,24 +186,23 @@ export default function DashboardLayout({
                 </p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
-              {/* Search */}
-              <div className="hidden md:flex relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-gray-700/50 border border-gray-600/50 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-400/50 focus:border-lime-400/50 w-64 transition-all"
-                />
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={openVerifyEmail}
+                  className="nav-item group relative inline-block text-sm font-medium text-black focus:ring-3 focus:outline-hidden cursor-pointer"
+                >
+                  <span className="absolute inset-0 border border-green-200 rounded-2xl transition-transform duration-200 group-hover:translate-x-1 group-hover:translate-y-1"></span>
+                  <div className="block border text-sm font-medium font-mono rounded-2xl border-lime-300 bg-lime-400 px-12 py-3 transition-transform duration-200 group-hover:-translate-x-1 group-hover:-translate-y-1">
+                    Verify Emails
+                  </div>
+                </button>
               </div>
-
               {/* Notifications */}
               <button className="relative p-2 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <Bell className="w-5 h-5 text-gray-300" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-lime-400 rounded-full animate-pulse"></span>
               </button>
-
               {/* Settings */}
               <button className="p-2 rounded-lg hover:bg-gray-700/50 transition-colors">
                 <Settings className="w-5 h-5 text-gray-300" />
@@ -197,6 +216,17 @@ export default function DashboardLayout({
           <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </main>
       </div>
+
+      {/* Floating Progress Indicator */}
+      <FloatingProgressIndicator onMaximize={handleMaximizeModal} />
+
+      {/* Email Verification Modal */}
+      <EmailVerificationModal
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+        hasUsedFreeTier={false}
+      />
     </div>
   )
 }
