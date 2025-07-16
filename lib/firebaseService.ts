@@ -15,32 +15,32 @@ import {
 } from "firebase/firestore"
 
 export interface UserData {
-  id: string
-  email: string
-  fullName: string
-  createdAt: any
-  updatedAt: any
-  emailLists: EmailList[]
-  totalValidEmails: number
-  totalInvalidEmails: number
+  id: string;
+  email: string;
+  fullName: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  emailLists: EmailList[];
+  totalValidEmails: number;
+  totalInvalidEmails: number;
 }
 
 export interface EmailList {
-  id: string
-  title: string
-  validEmails: string[]
-  invalidEmails: string[]
-  totalEmails: number
-  createdAt: any
-  status: "processing" | "completed" | "failed"
+  id: string;
+  title: string;
+  validEmails: string[];
+  invalidEmails: string[];
+  totalEmails: number;
+  createdAt: Timestamp;
+  status: "processing" | "completed" | "failed";
 }
 
 export interface GlobalEmail {
-  email: string
-  isValid: boolean
-  addedBy: string
-  addedAt: any
-  listTitle: string
+  email: string;
+  isValid: boolean;
+  addedBy: string;
+  addedAt: Timestamp;
+  listTitle: string;
 }
 
 // User Collection Operations
@@ -57,8 +57,8 @@ export const createOrUpdateUser = async (userData: {
       // Create new user
       const newUser: UserData = {
         ...userData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
         emailLists: [],
         totalValidEmails: 0,
         totalInvalidEmails: 0,

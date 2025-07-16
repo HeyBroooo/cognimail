@@ -1,16 +1,27 @@
-"use client"
-import { useState, useRef, useEffect } from "react"
-import type React from "react"
-import { X, Upload, Check, AlertTriangle, Download, Minimize2, Zap, Activity, FileText, Sparkles } from "lucide-react"
-import { gsap } from "gsap"
-import Script from "next/script"
-import { useBackgroundProcess } from "@/hooks/useBackgroundProcess"
+"use client";
+import { useState, useRef, useEffect } from "react";
+import type React from "react";
+import {
+  X,
+  Upload,
+  Check,
+  AlertTriangle,
+  Download,
+  Minimize2,
+  Zap,
+  Activity,
+  FileText,
+  Sparkles,
+} from "lucide-react";
+import { gsap } from "gsap";
+import Script from "next/script";
+import { useBackgroundProcess } from "@/hooks/useBackgroundProcess";
 
 interface EmailVerificationModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onPaymentSuccess: () => void
-  hasUsedFreeTier: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  onPaymentSuccess: () => void;
+  hasUsedFreeTier: boolean;
 }
 
 const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
@@ -19,18 +30,20 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   onPaymentSuccess,
   hasUsedFreeTier,
 }) => {
-  const [file, setFile] = useState<File | null>(null)
-  const [listTitle, setListTitle] = useState("")
-  const [showPayment, setShowPayment] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<"valid" | "invalid">("valid")
-  const [currentStep, setCurrentStep] = useState<"upload" | "naming" | "processing" | "results">("upload")
+  const [file, setFile] = useState<File | null>(null);
+  const [listTitle, setListTitle] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"valid" | "invalid">("valid");
+  const [currentStep, setCurrentStep] = useState<
+    "upload" | "naming" | "processing" | "results"
+  >("upload");
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const modalRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const progressBarRef = useRef<HTMLDivElement>(null)
-  const glowRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
 
   const {
     isProcessing,
@@ -41,35 +54,35 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
     resetProcess,
     error: processError,
     listTitle: backgroundListTitle,
-  } = useBackgroundProcess()
+  } = useBackgroundProcess();
 
   // Update current step based on state
   useEffect(() => {
     if (result) {
-      setCurrentStep("results")
+      setCurrentStep("results");
     } else if (isProcessing) {
-      setCurrentStep("processing")
+      setCurrentStep("processing");
     } else if (file && !listTitle.trim()) {
-      setCurrentStep("naming")
+      setCurrentStep("naming");
     } else if (file && listTitle.trim()) {
-      setCurrentStep("naming")
+      setCurrentStep("naming");
     } else {
-      setCurrentStep("upload")
+      setCurrentStep("upload");
     }
-  }, [file, listTitle, isProcessing, result])
+  }, [file, listTitle, isProcessing, result]);
 
   // GSAP Animations
   useEffect(() => {
     if (isOpen && modalRef.current) {
       const ctx = gsap.context(() => {
-        gsap.set(modalRef.current, { scale: 0.8, opacity: 0, rotationY: -15 })
+        gsap.set(modalRef.current, { scale: 0.8, opacity: 0, rotationY: -15 });
         gsap.to(modalRef.current, {
           scale: 1,
           opacity: 1,
           rotationY: 0,
           duration: 0.6,
           ease: "back.out(1.7)",
-        })
+        });
 
         // Animate content elements
         gsap.from(".modal-element", {
@@ -79,7 +92,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
           stagger: 0.1,
           delay: 0.2,
           ease: "power2.out",
-        })
+        });
 
         // Glowing border animation
         if (glowRef.current) {
@@ -88,13 +101,13 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
             duration: 8,
             repeat: -1,
             ease: "none",
-          })
+          });
         }
-      }, modalRef)
+      }, modalRef);
 
-      return () => ctx.revert()
+      return () => ctx.revert();
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   // Progress bar animation
   useEffect(() => {
@@ -103,81 +116,107 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
         width: `${progress}%`,
         duration: 0.5,
         ease: "power2.out",
-      })
+      });
     }
-  }, [progress, isProcessing])
+  }, [progress, isProcessing]);
 
   const resetValidationState = () => {
-    setFile(null)
-    setListTitle("")
-    setShowPayment(false)
-    setError(null)
-    setCurrentStep("upload")
+    setFile(null);
+    setListTitle("");
+    setShowPayment(false);
+    setError(null);
+    setCurrentStep("upload");
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+      fileInputRef.current.value = "";
     }
-    resetProcess()
-  }
+    resetProcess();
+  };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0]
-    if (!selectedFile) return
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) return;
 
     if (selectedFile.type !== "text/csv") {
-      setError("Please upload a valid CSV file")
-      return
+      setError("Please upload a valid CSV file");
+      return;
     }
 
-    setFile(selectedFile)
-    setError(null)
-  }
+    setFile(selectedFile);
+    setError(null);
+  };
 
   const handleStartValidation = async () => {
     if (!file || !listTitle.trim()) {
-      setError("Please provide both file and list title")
-      return
+      setError("Please provide both file and list title");
+      return;
     }
 
     if (hasUsedFreeTier) {
-      setShowPayment(true)
-      return
+      setShowPayment(true);
+      return;
     }
 
-    await startProcess(file, listTitle.trim())
-  }
+    await startProcess(file, listTitle.trim());
+  };
 
   const handleCancelValidation = () => {
-    cancelProcess()
-    resetValidationState()
-  }
+    cancelProcess();
+    resetValidationState();
+  };
 
   const handleClose = () => {
     if (isProcessing) {
       // Minimize to floating indicator, process continues
-      onClose()
+      onClose();
     } else {
-      resetValidationState()
-      onClose()
+      resetValidationState();
+      onClose();
     }
-  }
+  };
 
   const handleMinimize = () => {
-    onClose()
+    onClose();
+  };
+
+  interface RazorpayOptions {
+    key: string;
+    amount: number;
+    currency: string;
+    name: string;
+    description: string;
+    handler: () => void;
+    prefill: {
+      name: string;
+      email: string;
+    };
+    theme: {
+      color: string;
+    };
+  }
+
+  interface Razorpay {
+    new (options: RazorpayOptions): { open: () => void };
+  }
+
+  interface WindowWithRazorpay extends Window {
+    Razorpay: Razorpay;
   }
 
   const handlePayment = () => {
-    const options = {
+    const options: RazorpayOptions = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_12345",
       amount: 10000,
       currency: "INR",
       name: "CogniMail",
       description: "Email Validation Payment",
       handler: async () => {
-        setShowPayment(false)
+        setShowPayment(false);
         if (file && listTitle) {
-          await startProcess(file, listTitle.trim())
+          await startProcess(file, listTitle.trim());
         }
-        onPaymentSuccess()
+        onPaymentSuccess();
       },
       prefill: {
         name: "User Name",
@@ -186,23 +225,26 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
       theme: {
         color: "#34D399",
       },
-    }
-    const rzp = new (window as any).Razorpay(options)
-    rzp.open()
-  }
+    };
+
+    const rzp = new (window as unknown as WindowWithRazorpay).Razorpay(options);
+    rzp.open();
+  };
 
   const downloadCSV = (emails: string[], filename: string) => {
-    const csvContent = [["Email Address"], ...emails.map((email) => [email])].map((row) => row.join(",")).join("\n")
+    const csvContent = [["Email Address"], ...emails.map((email) => [email])]
+      .map((row) => row.join(","))
+      .join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-    link.setAttribute("href", url)
-    link.setAttribute("download", filename)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const renderEmailList = (emails: string[], isValid: boolean) => (
     <div className="modal-element max-h-[350px] overflow-y-auto rounded-2xl border border-gray-700/30 bg-gray-900/50 backdrop-blur-sm">
@@ -215,8 +257,14 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                 isValid ? "hover:bg-emerald-900/10" : "hover:bg-red-900/10"
               }`}
             >
-              <span className="flex-grow text-sm text-gray-200 truncate font-mono">{email}</span>
-              <div className={`p-2 rounded-full ${isValid ? "bg-emerald-500/20" : "bg-red-500/20"}`}>
+              <span className="flex-grow text-sm text-gray-200 truncate font-mono">
+                {email}
+              </span>
+              <div
+                className={`p-2 rounded-full ${
+                  isValid ? "bg-emerald-500/20" : "bg-red-500/20"
+                }`}
+              >
                 {isValid ? (
                   <Check className="w-4 h-4 text-emerald-400" />
                 ) : (
@@ -239,13 +287,15 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
               <AlertTriangle className="w-8 h-8 text-red-400" />
             )}
           </div>
-          <p className="text-gray-400 font-medium">No {isValid ? "valid" : "invalid"} emails found.</p>
+          <p className="text-gray-400 font-medium">
+            No {isValid ? "valid" : "invalid"} emails found.
+          </p>
         </div>
       )}
     </div>
-  )
+  );
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <>
@@ -271,7 +321,10 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
             className="absolute -inset-0.5 bg-gradient-to-r from-lime-400/20 via-emerald-500/20 to-green-400/20 rounded-3xl blur-sm opacity-75"
           ></div>
 
-          <div ref={contentRef} className="relative bg-gray-900/90 backdrop-blur-xl rounded-3xl p-8">
+          <div
+            ref={contentRef}
+            className="relative bg-gray-900/90 backdrop-blur-xl rounded-3xl p-8"
+          >
             {/* Header */}
             <div className="modal-element flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
@@ -288,19 +341,19 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     {currentStep === "results"
                       ? "Validation Complete"
                       : currentStep === "processing"
-                        ? "Processing Emails"
-                        : currentStep === "naming"
-                          ? "Name Your List"
-                          : "Email Verification"}
+                      ? "Processing Emails"
+                      : currentStep === "naming"
+                      ? "Name Your List"
+                      : "Email Verification"}
                   </h2>
                   <p className="text-gray-400 text-sm mt-1">
                     {currentStep === "results"
                       ? `"${backgroundListTitle}" results are ready for download`
                       : currentStep === "processing"
-                        ? "AI-powered validation in progress"
-                        : currentStep === "naming"
-                          ? "Give your email list a memorable name"
-                          : "Upload your CSV file to begin"}
+                      ? "AI-powered validation in progress"
+                      : currentStep === "naming"
+                      ? "Give your email list a memorable name"
+                      : "Upload your CSV file to begin"}
                   </p>
                 </div>
               </div>
@@ -338,16 +391,23 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                         currentStep === step.key
                           ? "bg-lime-400 text-gray-900 scale-110"
-                          : (["upload", "naming", "processing", "results"].indexOf(currentStep) > index)
-                            ? "bg-emerald-500 text-gray-900"
-                            : "bg-gray-700 text-gray-400"
+                          : [
+                              "upload",
+                              "naming",
+                              "processing",
+                              "results",
+                            ].indexOf(currentStep) > index
+                          ? "bg-emerald-500 text-gray-900"
+                          : "bg-gray-700 text-gray-400"
                       }`}
                     >
                       {step.number}
                     </div>
                     <span
                       className={`ml-2 text-xs font-medium ${
-                        currentStep === step.key ? "text-lime-400" : "text-gray-500"
+                        currentStep === step.key
+                          ? "text-lime-400"
+                          : "text-gray-500"
                       }`}
                     >
                       {step.label}
@@ -355,7 +415,9 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     {index < 3 && (
                       <div
                         className={`w-12 h-1 mx-3 rounded-full transition-all duration-300 ${
-                          ["upload", "naming", "processing", "results"].indexOf(currentStep) > index
+                          ["upload", "naming", "processing", "results"].indexOf(
+                            currentStep
+                          ) > index
                             ? "bg-emerald-500"
                             : "bg-gray-700"
                         }`}
@@ -371,7 +433,9 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
               <div className="modal-element mb-6 p-4 bg-red-900/30 border border-red-700/50 rounded-2xl backdrop-blur-sm">
                 <div className="flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-400" />
-                  <span className="text-red-400 font-medium">{error || processError}</span>
+                  <span className="text-red-400 font-medium">
+                    {error || processError}
+                  </span>
                 </div>
               </div>
             )}
@@ -389,10 +453,18 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     <span className="text-lg font-semibold text-gray-200 mb-2">
                       {file ? file.name : "Drop your CSV file here"}
                     </span>
-                    <span className="text-sm text-gray-400">Or click to browse • Supports CSV files up to 10MB</span>
+                    <span className="text-sm text-gray-400">
+                      Or click to browse • Supports CSV files up to 10MB
+                    </span>
                   </div>
 
-                  <input type="file" accept=".csv" onChange={handleFileChange} className="hidden" ref={fileInputRef} />
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    ref={fileInputRef}
+                  />
                 </label>
               </div>
             )}
@@ -403,14 +475,18 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                 <div className="p-6 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700/30 backdrop-blur-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <FileText className="w-6 h-6 text-lime-400" />
-                    <h3 className="text-lg font-semibold text-gray-200">Selected File</h3>
+                    <h3 className="text-lg font-semibold text-gray-200">
+                      Selected File
+                    </h3>
                   </div>
                   <p className="text-gray-300 font-mono text-sm">{file.name}</p>
                 </div>
 
                 <div className="space-y-4">
                   <label className="block">
-                    <span className="text-sm font-medium text-gray-300 mb-2 block">List Title *</span>
+                    <span className="text-sm font-medium text-gray-300 mb-2 block">
+                      List Title *
+                    </span>
                     <input
                       type="text"
                       value={listTitle}
@@ -419,7 +495,9 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                       className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-gray-200 placeholder-gray-500 focus:border-lime-400/50 focus:ring-2 focus:ring-lime-400/20 transition-all duration-300"
                       maxLength={100}
                     />
-                    <span className="text-xs text-gray-500 mt-1 block">{listTitle.length}/100 characters</span>
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      {listTitle.length}/100 characters
+                    </span>
                   </label>
 
                   <button
@@ -453,7 +531,9 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     <div className="flex items-center gap-3">
                       <Activity className="w-5 h-5 text-lime-400 animate-pulse" />
                       <span className="text-sm font-medium text-gray-300">
-                        {progress}% Complete&quot; Processing "{backgroundListTitle}"
+                        {isProcessing
+                          ? `Processing... ${progress}%`
+                          : "Preparing to validate emails"}
                       </span>
                     </div>
                     <button
@@ -474,10 +554,12 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                   <div className="w-16 h-16 bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-8 h-8 text-yellow-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-200 mb-2">Upgrade Required</h3>
+                  <h3 className="text-xl font-bold text-gray-200 mb-2">
+                    Upgrade Required
+                  </h3>
                   <p className="text-gray-400 mb-6">
-                    You&quot;`ve reached your free tier limit. Upgrade to continue validating emails with our premium AI
-                    engine.
+                    You&quot;`ve reached your free tier limit. Upgrade to
+                    continue validating emails with our premium AI engine.
                   </p>
                   <button
                     onClick={handlePayment}
@@ -499,8 +581,12 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     <div className="p-6 bg-gradient-to-br from-emerald-900/30 to-green-900/30 rounded-2xl border border-emerald-700/30 backdrop-blur-sm">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-sm text-emerald-400 font-medium mb-1">Valid Emails</div>
-                          <div className="text-3xl font-bold text-emerald-300">{result.validEmails.length}</div>
+                          <div className="text-sm text-emerald-400 font-medium mb-1">
+                            Valid Emails
+                          </div>
+                          <div className="text-3xl font-bold text-emerald-300">
+                            {result.validEmails.length}
+                          </div>
                         </div>
                         <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
                           <Check className="w-6 h-6 text-emerald-400" />
@@ -511,8 +597,12 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     <div className="p-6 bg-gradient-to-br from-red-900/30 to-pink-900/30 rounded-2xl border border-red-700/30 backdrop-blur-sm">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-sm text-red-400 font-medium mb-1">Invalid Emails</div>
-                          <div className="text-3xl font-bold text-red-300">{result.invalidEmails.length}</div>
+                          <div className="text-sm text-red-400 font-medium mb-1">
+                            Invalid Emails
+                          </div>
+                          <div className="text-3xl font-bold text-red-300">
+                            {result.invalidEmails.length}
+                          </div>
                         </div>
                         <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
                           <AlertTriangle className="w-6 h-6 text-red-400" />
@@ -523,8 +613,12 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                     <div className="p-6 bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-2xl border border-blue-700/30 backdrop-blur-sm">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-sm text-blue-400 font-medium mb-1">Total Processed</div>
-                          <div className="text-3xl font-bold text-blue-300">{result.length}</div>
+                          <div className="text-sm text-blue-400 font-medium mb-1">
+                            Total Processed
+                          </div>
+                          <div className="text-3xl font-bold text-blue-300">
+                            {result.length}
+                          </div>
                         </div>
                         <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
                           <Activity className="w-6 h-6 text-blue-400" />
@@ -570,7 +664,12 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                 {/* Download Buttons */}
                 <div className="modal-element space-y-4">
                   <button
-                    onClick={() => downloadCSV(result.validEmails, `${backgroundListTitle}_valid_emails.csv`)}
+                    onClick={() =>
+                      downloadCSV(
+                        result.validEmails,
+                        `${backgroundListTitle}_valid_emails.csv`
+                      )
+                    }
                     className="w-full group relative bg-gradient-to-r from-emerald-500 to-green-500 text-gray-900 rounded-2xl py-4 px-6 flex items-center justify-center gap-3 hover:from-emerald-600 hover:to-green-600 transition-all duration-300 transform hover:scale-[1.02] font-bold"
                   >
                     <Download className="w-5 h-5" />
@@ -579,7 +678,12 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                   </button>
 
                   <button
-                    onClick={() => downloadCSV(result.invalidEmails, `${backgroundListTitle}_invalid_emails.csv`)}
+                    onClick={() =>
+                      downloadCSV(
+                        result.invalidEmails,
+                        `${backgroundListTitle}_invalid_emails.csv`
+                      )
+                    }
                     className="w-full group relative bg-gradient-to-r from-red-500 to-pink-500 text-gray-900 rounded-2xl py-4 px-6 flex items-center justify-center gap-3 hover:from-red-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-[1.02] font-bold"
                   >
                     <Download className="w-5 h-5" />
@@ -593,7 +697,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
         </div>
       </div>
     </>
-  )
-}
+  );
+};
 
-export default EmailVerificationModal
+export default EmailVerificationModal;
