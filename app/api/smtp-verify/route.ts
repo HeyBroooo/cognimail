@@ -26,8 +26,8 @@ async function verifyWithNodemailer(email: string, mailServer: string): Promise<
     await transporter.verify()
     return true
   } catch (error) {
-    console.error(`${email} cannot receive emails via ${mailServer}: ${(error as any).message}`)
-    return false
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+console.error(`${email} cannot receive emails via ${mailServer}: ${(error as any).message}`);    return false
   }
 }
 
