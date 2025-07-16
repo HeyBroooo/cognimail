@@ -22,7 +22,7 @@ const FloatingProgressIndicator: React.FC<FloatingProgressIndicatorProps> = ({ o
     if (isProcessing || result || error) {
       setIsVisible(true)
     } else {
-      const timer = setTimeout(() => setIsVisible(false), 3000) // Hide after 3 seconds when complete
+      const timer = setTimeout(() => setIsVisible(false), 7000) // Extended to 7 seconds for better visibility
       return () => clearTimeout(timer)
     }
   }, [isProcessing, result, error])
@@ -47,6 +47,15 @@ const FloatingProgressIndicator: React.FC<FloatingProgressIndicatorProps> = ({ o
           ease: "back.out(1.7)",
         },
       )
+    } else if (!isVisible && indicatorRef.current) {
+      gsap.to(indicatorRef.current, {
+        y: 100,
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: () => setIsExpanded(false),
+      })
     }
   }, [isVisible])
 
@@ -97,22 +106,22 @@ const FloatingProgressIndicator: React.FC<FloatingProgressIndicatorProps> = ({ o
   }
 
   const getSubText = () => {
-    if (isProcessing) return `${progress}% • ${listTitle}`
+    if (isProcessing) return `${progress}% • ${listTitle || "Email Validation"}`
     if (result) return `${result.length} emails processed`
     if (error) return "Click to retry"
-    return listTitle
+    return listTitle || "Email Validation"
   }
 
   return (
     <div
       ref={indicatorRef}
-      className="fixed bottom-6 right-6 z-50 max-w-sm"
+      className="fixed bottom-6 right-6 z-[9999] max-w-sm" // Highest z-index to ensure visibility
       style={{ transform: "translateZ(0)" }} // Force hardware acceleration
     >
       {/* Main Indicator */}
       <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">
         {/* Glowing border effect */}
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-lime-400/20 via-emerald-500/20 to-green-400/20 rounded-2xl blur-sm opacity-75"></div>
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-lime-400/40 via-emerald-500/40 to-green-400/40 rounded-2xl blur-sm opacity-90"></div>
 
         <div
           ref={contentRef}

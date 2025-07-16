@@ -16,6 +16,13 @@ interface ValidationResult {
   source?: string
 }
 
+export interface EmailStatus {
+  email: string
+  status: "pending" | "processing" | "completed" | "failed"
+  result?: ValidationResult
+  processingTime?: number
+}
+
 export interface ProcessResult {
   length: number
   validEmails: string[]
@@ -144,12 +151,21 @@ const extractEmailsFromCSV = async (file: File): Promise<string[]> => {
   return [...new Set(result.data.flat().filter(Boolean))]
 }
 
+// Update the processEmailFile function signature to include more live updates
 const processEmailFile = async (
   file: File,
-  onProgress?: (progress: number) => void,
+  onProgress?: (
+    progress: number,
+    emailStatuses: EmailStatus[],
+    currentIndex: number,
+    processedCount: number,
+    currentEmail: string | null,
+    recentCompleted: string[],
+  ) => void,
   signal?: AbortSignal,
 ): Promise<ProcessResult> => {
   console.log(`Processing file: ${file.name}`)
+
   if (file.type !== "text/csv") {
     console.log("Unsupported file type.")
     return { validEmails: [], invalidEmails: [], details: [], length: 0 }
@@ -158,32 +174,89 @@ const processEmailFile = async (
   const emails = await extractEmailsFromCSV(file)
   const result: ProcessResult = { validEmails: [], invalidEmails: [], details: [], length: emails.length }
 
+  // Initialize email statuses
+  const emailStatuses: EmailStatus[] = emails.map((email) => ({
+    email,
+    status: "pending",
+  }))
+
   console.time("Processing time")
 
-  const allValidations = await Promise.allSettled(emails.map((email) => validateEmail(email, signal!)))
+  let processedCount = 0
+  const recentlyCompleted: string[] = []
 
-  allValidations.forEach((validation, index) => {
+  // Process emails sequentially to show real-time progress
+  for (let i = 0; i < emails.length; i++) {
     if (signal?.aborted) {
       throw new DOMException("Validation aborted", "AbortError")
     }
 
-    if (validation.status === "fulfilled") {
-      const val = validation.value
-      if (val.score >= 90) result.validEmails.push(val.email)
-      else result.invalidEmails.push(val.email)
-      result.details.push(val)
-    } else {
-      console.error(`Validation failed for email: ${emails[index]}`)
+    const email = emails[i]
+    const startTime = Date.now()
+
+    // Update status to processing and notify current email
+    emailStatuses[i].status = "processing"
+
+    if (onProgress) {
+      onProgress(
+        Math.round((i / emails.length) * 100),
+        [...emailStatuses],
+        i,
+        processedCount,
+        email, // current email being processed
+        [...recentlyCompleted],
+      )
+    }
+
+    try {
+      const validation = await validateEmail(email, signal!)
+      const processingTime = Date.now() - startTime
+
+      emailStatuses[i] = {
+        email,
+        status: "completed",
+        result: validation,
+        processingTime,
+      }
+
+      if (validation.score >= 90) {
+        result.validEmails.push(validation.email)
+      } else {
+        result.invalidEmails.push(validation.email)
+      }
+
+      result.details.push(validation)
+      processedCount++
+
+      // Add to recently completed (keep last 5)
+      recentlyCompleted.unshift(email)
+      if (recentlyCompleted.length > 5) {
+        recentlyCompleted.pop()
+      }
+    } catch (error) {
+      console.error(`Validation failed for email: ${email}`, error)
+      emailStatuses[i].status = "failed"
     }
 
     if (onProgress) {
-      const progress = Math.round(((index + 1) / emails.length) * 100)
-      onProgress(progress)
+      const progress = Math.round(((i + 1) / emails.length) * 100)
+      onProgress(
+        progress,
+        [...emailStatuses],
+        i,
+        processedCount,
+        i + 1 < emails.length ? emails[i + 1] : null, // next email or null if done
+        [...recentlyCompleted],
+      )
     }
-  })
+
+    // Small delay to make the progress more visible (remove in production if too slow)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
 
   console.timeEnd("Processing time")
   console.log(`Valid: ${result.validEmails.length}, Invalid: ${result.invalidEmails.length}`)
+
   return result
 }
 
