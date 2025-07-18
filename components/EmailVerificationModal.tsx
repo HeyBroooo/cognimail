@@ -50,7 +50,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   const emailListRef = useRef<HTMLDivElement>(null)
 
   // Add new state and refs for live progress
-  const liveProgressRef = useRef<HTMLDivElement>(null)
+  // const liveProgressRef = useRef<HTMLDivElement>(null)
   const currentEmailRef = useRef<HTMLDivElement>(null)
   const recentActivityRef = useRef<HTMLDivElement>(null)
 
@@ -727,7 +727,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                   </div>
                   <h3 className="text-xl font-bold text-gray-200 mb-2">Upgrade Required</h3>
                   <p className="text-gray-400 mb-6">
-                    You've reached your free tier limit. Upgrade to continue validating emails with our premium AI
+                    You&apos;ve reached your free tier limit. Upgrade to continue validating emails with our premium AI
                     engine.
                   </p>
                   <button
