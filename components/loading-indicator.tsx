@@ -55,7 +55,7 @@ export default function LoadingIndicator() {
   }, []);
 
   return (
-    <div className="flex flex-col justify-center items-center h-screen bg-black">
+    <div className="flex flex-col justify-center items-center h-screen bg-transparent">
       <div
         ref={circleRef}
         className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-1.5 flex items-center justify-center shadow-lg"

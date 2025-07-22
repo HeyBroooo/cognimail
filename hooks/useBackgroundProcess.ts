@@ -2,9 +2,8 @@
 import { useState, useRef, useCallback } from "react"
 import { useUser } from "@clerk/nextjs"
 import processEmailFile, { type ProcessResult, type EmailStatus } from "../lib/processEmailFile"
-import { createOrUpdateUser, createEmailList, updateEmailListResults } from "../lib/firebaseService"
+import { createOrUpdateUser, createEmailList, updateEmailListResults, updateUserLimit } from "../lib/firebaseService"
 
-// Update the BackgroundProcessState interface to include more live tracking
 interface BackgroundProcessState {
   isProcessing: boolean
   progress: number
@@ -19,13 +18,12 @@ interface BackgroundProcessState {
   processedCount: number
   totalCount: number
   currentlyProcessingEmail: string | null
-  processingSpeed: number // emails per second
-  recentlyCompletedEmails: string[] // last 5 completed emails
+  processingSpeed: number
+  recentlyCompletedEmails: string[]
 }
 
 export const useBackgroundProcess = () => {
   const { user } = useUser()
-  // Update the initial state
   const [state, setState] = useState<BackgroundProcessState>({
     isProcessing: false,
     progress: 0,
@@ -46,7 +44,6 @@ export const useBackgroundProcess = () => {
 
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Update the calculateEstimatedTime function to also calculate processing speed
   const calculateEstimatedTime = (
     processedCount: number,
     totalCount: number,
@@ -55,7 +52,7 @@ export const useBackgroundProcess = () => {
     if (processedCount === 0) return { estimatedTime: 0, speed: 0 }
 
     const elapsedTime = Date.now() - startTime
-    const speed = processedCount / (elapsedTime / 1000) // emails per second
+    const speed = processedCount / (elapsedTime / 1000)
     const averageTimePerEmail = elapsedTime / processedCount
     const remainingEmails = totalCount - processedCount
 
@@ -66,7 +63,7 @@ export const useBackgroundProcess = () => {
   }
 
   const startProcess = useCallback(
-    async (file: File, listTitle: string) => {
+    async (file: File, listTitle: string, emailCount: number) => {
       if (!user) {
         setState((prev) => ({ ...prev, error: "User not authenticated" }))
         return
@@ -86,6 +83,7 @@ export const useBackgroundProcess = () => {
         emailStatuses: [],
         currentEmailIndex: 0,
         estimatedTimeRemaining: 0,
+        totalCount: emailCount,
       }))
 
       abortControllerRef.current = new AbortController()
@@ -98,17 +96,11 @@ export const useBackgroundProcess = () => {
           fullName: user.fullName || user.primaryEmailAddress?.emailAddress || "User",
         })
 
-        // Get total emails count first
-        const text = await file.text()
-        const emailCount = text.split("\n").filter((line) => line.trim()).length
-
-        setState((prev) => ({ ...prev, totalCount: emailCount }))
-
         // Create email list in Firebase
         const listId = await createEmailList(user.id, listTitle, emailCount)
         setState((prev) => ({ ...prev, currentListId: listId }))
 
-        // Update the startProcess function to include more live tracking
+        // Process emails
         const result = await processEmailFile(
           file,
           (progress, emailStatuses, currentIndex, processedCount, currentEmail, recentCompleted) => {
@@ -129,8 +121,9 @@ export const useBackgroundProcess = () => {
           abortControllerRef.current.signal,
         )
 
-        // Update Firebase with results
+        // Update Firebase with results and user limit
         await updateEmailListResults(user.id, listId, result.validEmails, result.invalidEmails)
+        await updateUserLimit(user.id, emailCount)
 
         setState((prev) => ({
           ...prev,
@@ -175,7 +168,6 @@ export const useBackgroundProcess = () => {
     }
   }, [])
 
-  // Update the resetProcess function
   const resetProcess = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()

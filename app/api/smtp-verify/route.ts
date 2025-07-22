@@ -33,6 +33,8 @@ console.error(`${email} cannot receive emails via ${mailServer}: ${(error as any
 
 async function verifyEmailSMTP(email: string): Promise<{ valid: boolean; hasMX: boolean; reason?: string }> {
   try {
+    console.log(`Verifying email: ${email}`)
+    console.log("Checking MX records...")
     const [, domain] = email.split("@")
     const mxRecords = await resolveMx(domain)
 
@@ -47,6 +49,7 @@ async function verifyEmailSMTP(email: string): Promise<{ valid: boolean; hasMX: 
       if (isValid) return { valid: true, hasMX: true }
     }
 
+    console.log("No valid mail server found for SMTP verification")
     return { valid: false, hasMX: true, reason: "SMTP verification failed" }
   } catch (error) {
     console.error("Verification error:", error)
@@ -63,6 +66,7 @@ export async function POST(request: Request) {
     }
 
     const result = await verifyEmailSMTP(email)
+    console.log("SMTP verification result:", result)
     return NextResponse.json(result)
   } catch (error) {
     console.error("API error:", error)

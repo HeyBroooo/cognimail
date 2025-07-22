@@ -22,7 +22,7 @@ const FloatingProgressIndicator: React.FC<FloatingProgressIndicatorProps> = ({ o
     if (isProcessing || result || error) {
       setIsVisible(true)
     } else {
-      const timer = setTimeout(() => setIsVisible(false), 7000) // Extended to 7 seconds for better visibility
+      const timer = setTimeout(() => setIsVisible(false), 7000)
       return () => clearTimeout(timer)
     }
   }, [isProcessing, result, error])
@@ -115,8 +115,8 @@ const FloatingProgressIndicator: React.FC<FloatingProgressIndicatorProps> = ({ o
   return (
     <div
       ref={indicatorRef}
-      className="fixed bottom-6 right-6 z-[9999] max-w-sm" // Highest z-index to ensure visibility
-      style={{ transform: "translateZ(0)" }} // Force hardware acceleration
+      className="fixed bottom-6 right-6 z-[9999] max-w-sm"
+      style={{ transform: "translateZ(0)" }}
     >
       {/* Main Indicator */}
       <div className="bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden">

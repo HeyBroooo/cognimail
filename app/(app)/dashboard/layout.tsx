@@ -5,7 +5,7 @@ import { gsap } from "gsap"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Suspense } from "react"
-import { LayoutDashboard, FileText, Users, Gift, CreditCard, Zap, LogOut, Menu, X, Bell, Settings } from "lucide-react"
+import { LayoutDashboard, FileText, Mail, Gift, CreditCard, Zap, LogOut, Menu, X, Bell, Settings, Users, LayoutTemplateIcon, Layers2 } from "lucide-react"
 import { useUser, useClerk } from "@clerk/nextjs"
 import LoadingIndicator from "@/components/loading-indicator"
 import EmailVerificationModal from "@/components/EmailVerificationModal"
@@ -14,8 +14,9 @@ import { useBackgroundProcess } from "@/hooks/useBackgroundProcess"
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Overview", href: "/dashboard" },
+  { icon: Layers2, label: "Create Template", href: "/dashboard/create-template" },
   { icon: FileText, label: "Templates", href: "/dashboard/templates" },
-  { icon: Users, label: "Contacts", href: "/dashboard/contacts" },
+  { icon: Mail, label: "Email List", href: "/dashboard/email-list" },
   { icon: Gift, label: "Referrals", href: "/dashboard/referrals" },
   { icon: CreditCard, label: "Billing", href: "/dashboard/billing" },
   { icon: Zap, label: "Upgrade", href: "/dashboard/upgrade" },
@@ -120,7 +121,7 @@ export default function DashboardLayout({
           } lg:translate-x-0`}
         >
           <div className="flex flex-col h-full">
-            {/* Logo */}
+            {/* Logo */} 
             <div className="p-6 border-b border-gray-700/50">
               <Link href="/dashboard" className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-lime-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -142,13 +143,13 @@ export default function DashboardLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                    className={`nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium  border-lime-300/80 transition-all duration-200 group ${
                       isActive
-                        ? "bg-lime-400/20 text-lime-400 border border-lime-400/30 shadow-lg shadow-lime-400/10"
-                        : "text-gray-300 hover:bg-gray-700/50 hover:text-white hover:border hover:border-gray-600/30"
+                        ? "bg-lime-400/20 text-lime-400 border border-lime-400/80 shadow-lg shadow-lime-400/50"
+                        : "text-gray-300 hover:bg-gray-700/50  hover:text-white hover:border hover:border-lime-300/80"
                     }`}
                   >
-                    <Icon className={`w-5 h-5 ${isActive ? "text-lime-400" : "text-gray-400 group-hover:text-white"}`} />
+                    <Icon className={`w-5 h-5 ${isActive ? "text-lime-400" : "text-gray-400  group-hover:text-white"}`} />
                     <span className="font-medium">{item.label}</span>
                     {isActive && <div className="ml-auto w-2 h-2 bg-lime-400 rounded-full"></div>}
                   </Link>
@@ -197,7 +198,7 @@ export default function DashboardLayout({
                     {sidebarItems.find((item) => item.href === pathname)?.label || "Dashboard"}
                   </h1>
                   <p className="text-sm text-gray-400 hidden sm:block">
-                    Welcome back! Here&apos;s what&apos;s happening with your campaigns.
+                    Welcome back! Here's what's happening with your campaigns.
                   </p>
                 </div>
               </div>
@@ -228,7 +229,7 @@ export default function DashboardLayout({
 
           {/* Page Content */}
           <main className="main-content flex-1 p-4 lg:p-6 bg-gray-900">
-            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+            <Suspense fallback={<LoadingIndicator />}>{children}</Suspense>
           </main>
         </div>
 
@@ -241,7 +242,7 @@ export default function DashboardLayout({
         />
       </div>
 
-      {/* Floating Progress Indicator - Moved outside main container with highest z-index */}
+      {/* Floating Progress Indicator */}
       <div className="fixed inset-0 pointer-events-none z-[10000]">
         <FloatingProgressIndicator onMaximize={handleMaximizeModal} />
       </div>

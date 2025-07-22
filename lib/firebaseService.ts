@@ -15,35 +15,46 @@ import {
 } from "firebase/firestore"
 
 export interface UserData {
-  id: string;
-  email: string;
-  fullName: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  emailLists: EmailList[];
-  totalValidEmails: number;
-  totalInvalidEmails: number;
+  id: string
+  email: string
+  fullName: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+  emailLists: EmailList[]
+  totalValidEmails: number
+  totalInvalidEmails: number
+  limit: string
+  templates: Template[];
 }
 
 export interface EmailList {
+  id: string
+  title: string
+  validEmails: string[]
+  invalidEmails: string[]
+  totalEmails: number
+  createdAt: Timestamp
+  status: "processing" | "completed" | "failed"
+}
+
+export interface Template {
   id: string;
   title: string;
-  validEmails: string[];
-  invalidEmails: string[];
-  totalEmails: number;
+  design: any;
+  html: string;
+  plaintext: string;
+  score: number;
   createdAt: Timestamp;
-  status: "processing" | "completed" | "failed";
 }
 
 export interface GlobalEmail {
-  email: string;
-  isValid: boolean;
-  addedBy: string;
-  addedAt: Timestamp;
-  listTitle: string;
+  email: string
+  isValid: boolean
+  addedBy: string
+  addedAt: Timestamp
+  listTitle: string
 }
 
-// User Collection Operations
 export const createOrUpdateUser = async (userData: {
   id: string
   email: string
@@ -54,14 +65,16 @@ export const createOrUpdateUser = async (userData: {
     const userDoc = await getDoc(userRef)
 
     if (!userDoc.exists()) {
-      // Create new user
+      // Create new user with initial limit
       const newUser: UserData = {
         ...userData,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         emailLists: [],
+        templates: [],
         totalValidEmails: 0,
         totalInvalidEmails: 0,
+        limit: "1000",
       }
       await setDoc(userRef, newUser)
       return newUser
@@ -79,6 +92,51 @@ export const createOrUpdateUser = async (userData: {
   }
 }
 
+
+export const saveTemplate = async (userId: string, template: Omit<Template, "id" | "createdAt">) => {
+  try {
+    const userRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists()) {
+      throw new Error("User not found");
+    }
+
+    const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newTemplate: Template = {
+      id: templateId,
+      ...template,
+      createdAt: Timestamp.now(),
+    };
+
+    await updateDoc(userRef, {
+      templates: arrayUnion(newTemplate),
+      updatedAt: Timestamp.now(),
+    });
+
+    return newTemplate;
+  } catch (error) {
+    console.error("Error saving template:", error);
+    throw error;
+  }
+};
+
+export const getUserTemplates = async (userId: string): Promise<Template[]> => {
+  try {
+    const userRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userRef);
+    if (userDoc.exists()) {
+      const userData = userDoc.data() as UserData;
+      return userData.templates || [];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching user templates:", error);
+    return [];
+  }
+};
+
+
 export const getUserData = async (userId: string): Promise<UserData | null> => {
   try {
     const userRef = doc(db, "users", userId)
@@ -90,7 +148,25 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
   }
 }
 
-// Email List Operations
+export const updateUserLimit = async (userId: string, emailCount: number) => {
+  try {
+    const userRef = doc(db, "users", userId)
+    const userDoc = await getDoc(userRef)
+    if (userDoc.exists()) {
+      const userData = userDoc.data() as UserData
+      const currentLimit = parseInt(userData.limit || "1000", 10)
+      const newLimit = Math.max(0, currentLimit - emailCount)
+      await updateDoc(userRef, {
+        limit: newLimit.toString(),
+        updatedAt: serverTimestamp(),
+      })
+    }
+  } catch (error) {
+    console.error("Error updating user limit:", error)
+    throw error
+  }
+}
+
 export const createEmailList = async (userId: string, title: string, totalEmails: number): Promise<string> => {
   try {
     const listId = `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -100,7 +176,7 @@ export const createEmailList = async (userId: string, title: string, totalEmails
       validEmails: [],
       invalidEmails: [],
       totalEmails,
-      createdAt: Timestamp.now(), // Use Timestamp.now() instead of serverTimestamp()
+      createdAt: Timestamp.now(),
       status: "processing",
     }
 
@@ -162,7 +238,6 @@ export const updateEmailListResults = async (
   }
 }
 
-// Global Email Collections
 export const addToGlobalEmails = async (
   userId: string,
   validEmails: string[],
@@ -178,7 +253,7 @@ export const addToGlobalEmails = async (
         email,
         isValid: true,
         addedBy: userId,
-        addedAt: Timestamp.now(), // Use Timestamp.now() instead of serverTimestamp()
+        addedAt: Timestamp.now(),
         listTitle,
       }
       batch.push(addDoc(collection(db, "globalValidEmails"), globalEmail))
@@ -190,7 +265,7 @@ export const addToGlobalEmails = async (
         email,
         isValid: false,
         addedBy: userId,
-        addedAt: Timestamp.now(), // Use Timestamp.now() instead of serverTimestamp()
+        addedAt: Timestamp.now(),
         listTitle,
       }
       batch.push(addDoc(collection(db, "globalInvalidEmails"), globalEmail))
@@ -203,7 +278,6 @@ export const addToGlobalEmails = async (
   }
 }
 
-// Check if email exists in global collections
 export const checkEmailInGlobal = async (
   email: string,
 ): Promise<{
@@ -212,77 +286,41 @@ export const checkEmailInGlobal = async (
   source?: string
 }> => {
   try {
-    // Check in valid emails
-    const validQuery = query(collection(db, "globalValidEmails"), where("email", "==", email))
+    // Normalize email to avoid case sensitivity issues
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // Check in global valid emails collection
+    const validQuery = query(collection(db, "globalValidEmails"), where("email", "==", normalizedEmail))
     const validDocs = await getDocs(validQuery)
 
     if (!validDocs.empty) {
+      const docData = validDocs.docs[0].data() as GlobalEmail
       return {
         exists: true,
         isValid: true,
-        source: "global_database",
+        source: docData.listTitle,
       }
     }
 
-    // Check in invalid emails
-    const invalidQuery = query(collection(db, "globalInvalidEmails"), where("email", "==", email))
+    // Check in global invalid emails collection
+    const invalidQuery = query(collection(db, "globalInvalidEmails"), where("email", "==", normalizedEmail))
     const invalidDocs = await getDocs(invalidQuery)
 
     if (!invalidDocs.empty) {
+      const docData = invalidDocs.docs[0].data() as GlobalEmail
       return {
         exists: true,
         isValid: false,
-        source: "global_database",
+        source: docData.listTitle,
       }
     }
 
-    return { exists: false }
+    // Email not found in either collection
+    return {
+      exists: false,
+    }
   } catch (error) {
-    console.error("Error checking email in global:", error)
-    return { exists: false }
-  }
-}
-
-// Alternative approach using batch writes for better performance
-export const addToGlobalEmailsBatch = async (
-  userId: string,
-  validEmails: string[],
-  invalidEmails: string[],
-  listTitle: string,
-) => {
-  try {
-    const { writeBatch } = await import("firebase/firestore")
-    const batch = writeBatch(db)
-
-    // Add valid emails to global collection
-    for (const email of validEmails) {
-      const globalEmail: GlobalEmail = {
-        email,
-        isValid: true,
-        addedBy: userId,
-        addedAt: Timestamp.now(),
-        listTitle,
-      }
-      const docRef = doc(collection(db, "globalValidEmails"))
-      batch.set(docRef, globalEmail)
-    }
-
-    // Add invalid emails to global collection
-    for (const email of invalidEmails) {
-      const globalEmail: GlobalEmail = {
-        email,
-        isValid: false,
-        addedBy: userId,
-        addedAt: Timestamp.now(),
-        listTitle,
-      }
-      const docRef = doc(collection(db, "globalInvalidEmails"))
-      batch.set(docRef, globalEmail)
-    }
-
-    await batch.commit()
-  } catch (error) {
-    console.error("Error adding to global emails with batch:", error)
+    console.error("Error checking email in global collections:", error)
     throw error
   }
 }

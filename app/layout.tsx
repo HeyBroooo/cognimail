@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,9 @@ export const metadata: Metadata = {
     "Productivity",
     "CogniMail",
   ],
+  icons: {
+    icon: "/cube-icon.ico",
+  },
   openGraph: {
     title: "CogniMail",
     description: "CogniMail - Your AI-Powered Email Service",
@@ -71,6 +75,12 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
+        <head>
+          <Script
+            src="https://js.puter.com/v2/"
+            strategy="afterInteractive"
+          />
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >

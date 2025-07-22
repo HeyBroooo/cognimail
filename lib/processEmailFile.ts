@@ -38,12 +38,15 @@ const mxCache: Map<string, boolean> = new Map()
 
 const checkSMTP = async (email: string, signal: AbortSignal): Promise<{ valid: boolean; hasMX: boolean }> => {
   try {
+    console.log("verification started")
     const response = await fetch("/api/smtp-verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
       signal,
     })
+    console.log("verification completed")
+    console.log("Response status:", response.status)
     if (!response.ok) throw new Error("SMTP verification failed")
     return await response.json()
   } catch (error) {

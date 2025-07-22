@@ -19,8 +19,11 @@ import {
 } from "lucide-react"
 import { gsap } from "gsap"
 import Script from "next/script"
+import { useRouter } from "next/navigation" // Import useRouter for navigation
 import { useBackgroundProcess } from "@/hooks/useBackgroundProcess"
-import type { EmailStatus } from "@/lib/processEmailFile"
+import { useUser } from "@clerk/nextjs"
+import { getUserData } from "@/lib/firebaseService"
+import { EmailStatus } from "@/lib/processEmailFile"
 
 interface EmailVerificationModalProps {
   isOpen: boolean
@@ -37,10 +40,10 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
 }) => {
   const [file, setFile] = useState<File | null>(null)
   const [listTitle, setListTitle] = useState("")
-  const [showPayment, setShowPayment] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"valid" | "invalid">("valid")
   const [currentStep, setCurrentStep] = useState<"upload" | "naming" | "processing" | "results">("upload")
+  const [remainingLimit, setRemainingLimit] = useState<number | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -48,13 +51,11 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   const progressBarRef = useRef<HTMLDivElement>(null)
   const glowRef = useRef<HTMLDivElement>(null)
   const emailListRef = useRef<HTMLDivElement>(null)
-
-  // Add new state and refs for live progress
-  // const liveProgressRef = useRef<HTMLDivElement>(null)
   const currentEmailRef = useRef<HTMLDivElement>(null)
   const recentActivityRef = useRef<HTMLDivElement>(null)
 
-  // Add new destructured properties from useBackgroundProcess
+  const { user } = useUser()
+  const router = useRouter() // Initialize useRouter for navigation
   const {
     isProcessing,
     progress,
@@ -73,6 +74,19 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
     processingSpeed,
     recentlyCompletedEmails,
   } = useBackgroundProcess()
+
+  // Fetch user data to get remaining limit
+  useEffect(() => {
+    const fetchUserLimit = async () => {
+      if (user) {
+        const userData = await getUserData(user.id)
+        if (userData) {
+          setRemainingLimit(parseInt(userData.limit || "1000", 10))
+        }
+      }
+    }
+    fetchUserLimit()
+  }, [user])
 
   // Update current step based on state
   useEffect(() => {
@@ -148,7 +162,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
     }
   }, [currentEmailIndex, isProcessing])
 
-  // Add animation for current email being processed
+  // Animation for current email being processed
   useEffect(() => {
     if (currentEmailRef.current && currentlyProcessingEmail) {
       gsap.fromTo(
@@ -159,7 +173,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
     }
   }, [currentlyProcessingEmail])
 
-  // Add animation for recently completed emails
+  // Animation for recently completed emails
   useEffect(() => {
     if (recentActivityRef.current && recentlyCompletedEmails.length > 0) {
       const items = recentActivityRef.current.querySelectorAll(".recent-item")
@@ -177,7 +191,6 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   const resetValidationState = () => {
     setFile(null)
     setListTitle("")
-    setShowPayment(false)
     setError(null)
     setCurrentStep("upload")
     if (fileInputRef.current) {
@@ -207,12 +220,20 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
       return
     }
 
-    if (hasUsedFreeTier) {
-      setShowPayment(true)
+    const text = await file.text()
+    const emailCount = text.split("\n").filter((line) => line.trim()).length
+
+    if (remainingLimit !== null && emailCount > remainingLimit) {
+      router.push("/account/upgrade") // Redirect to account upgrade page
       return
     }
 
-    await startProcess(file, listTitle.trim())
+    if (hasUsedFreeTier) {
+      router.push("/account/upgrade") // Redirect to account upgrade page
+      return
+    }
+
+    await startProcess(file, listTitle.trim(), emailCount)
   }
 
   const handleCancelValidation = () => {
@@ -231,57 +252,6 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
 
   const handleMinimize = () => {
     onClose()
-  }
-
-  interface RazorpayOptions {
-    key: string
-    amount: number
-    currency: string
-    name: string
-    description: string
-    handler: () => void
-    prefill: {
-      name: string
-      email: string
-    }
-    theme: {
-      color: string
-    }
-  }
-
-  interface Razorpay {
-    new (options: RazorpayOptions): { open: () => void }
-  }
-
-  interface WindowWithRazorpay extends Window {
-    Razorpay: Razorpay
-  }
-
-  const handlePayment = () => {
-    const options: RazorpayOptions = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_12345",
-      amount: 10000,
-      currency: "INR",
-      name: "CogniMail",
-      description: "Email Validation Payment",
-      handler: async () => {
-        setShowPayment(false)
-        if (file && listTitle) {
-          await startProcess(file, listTitle.trim())
-        }
-        onPaymentSuccess()
-      },
-      prefill: {
-        name: "User Name",
-        email: "user@example.com",
-      },
-      theme: {
-        color: "#34D399",
-      },
-    }
-
-    const rzp = new (window as unknown as WindowWithRazorpay).Razorpay(options)
-    rzp.open()
   }
 
   const downloadCSV = (emails: string[], filename: string) => {
@@ -329,7 +299,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   const renderEmailProcessingList = () => (
     <div
       ref={emailListRef}
-      className="modal-element max-h-[400px] overflow-y-auto rounded-2xl border border-gray-700/30 bg-gray-900/50 backdrop-blur-sm"
+      className="modal-element max-h-[200px] overflow-y-auto rounded-2xl border border-gray-700/30 bg-gray-900/50 backdrop-blur-sm"
     >
       <div className="p-4 border-b border-gray-700/30 bg-gray-800/50">
         <div className="flex items-center justify-between">
@@ -384,7 +354,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   )
 
   const renderEmailList = (emails: string[], isValid: boolean) => (
-    <div className="modal-element max-h-[350px] overflow-y-auto rounded-2xl border border-gray-700/30 bg-gray-900/50 backdrop-blur-sm">
+    <div className="modal-element max-h-[200px] overflow-y-auto rounded-2xl border border-gray-700/30 bg-gray-900/50 backdrop-blur-sm">
       {emails.length > 0 ? (
         <div className="divide-y divide-gray-700/20">
           {emails.map((email, index) => (
@@ -424,7 +394,6 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
     </div>
   )
 
-  // Add new component for live processing display
   const renderLiveProcessingDisplay = () => (
     <div className="modal-element space-y-6">
       {/* Current Processing Status */}
@@ -514,7 +483,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
         {/* Modal */}
         <div
           ref={modalRef}
-          className="relative w-full max-w-5xl bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-3xl shadow-2xl overflow-hidden"
+          className="relative w-full max-w-4xl max-h-[80vh] bg-gradient-to-br from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-3xl shadow-2xl overflow-hidden"
         >
           {/* Glowing border effect */}
           <div
@@ -522,7 +491,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
             className="absolute -inset-0.5 bg-gradient-to-r from-lime-400/20 via-emerald-500/20 to-green-400/20 rounded-3xl blur-sm opacity-75"
           ></div>
 
-          <div ref={contentRef} className="relative bg-gray-900/90 backdrop-blur-xl rounded-3xl p-8">
+          <div ref={contentRef} className="relative bg-gray-900/90 backdrop-blur-xl rounded-3xl p-8 overflow-y-auto">
             {/* Header */}
             <div className="modal-element flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
@@ -574,6 +543,15 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
               </div>
             </div>
 
+            {/* Remaining Limit Display */}
+            {remainingLimit !== null && (
+              <div className="modal-element mb-6 p-4 bg-blue-900/30 border border-blue-700/50 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <span className="text-blue-400 font-medium">Remaining Verification Limit: {remainingLimit} emails</span>
+                </div>
+              </div>
+            )}
+
             {/* Progress Steps */}
             <div className="modal-element mb-8">
               <div className="flex items-center justify-between">
@@ -596,7 +574,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
                       {step.number}
                     </div>
                     <span
-                      className={`ml-2 text-xs font-medium ${
+                      className={`ml-2 crâne text-xs font-medium ${
                         currentStep === step.key ? "text-lime-400" : "text-gray-500"
                       }`}
                     >
@@ -627,7 +605,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
             )}
 
             {/* File Upload Step */}
-            {currentStep === "upload" && !showPayment && (
+            {currentStep === "upload" && (
               <div className="modal-element mb-8">
                 <label className="group relative flex flex-col items-center justify-center p-12 border-2 border-dashed border-gray-600/50 rounded-3xl hover:border-lime-400/50 transition-all duration-500 cursor-pointer bg-gradient-to-br from-gray-800/30 to-gray-900/30 backdrop-blur-sm">
                   <div className="absolute inset-0 bg-gradient-to-r from-lime-400/5 to-emerald-400/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -646,7 +624,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
             )}
 
             {/* Naming Step */}
-            {currentStep === "naming" && file && !showPayment && (
+            {currentStep === "naming" && file && (
               <div className="modal-element mb-8 space-y-6">
                 <div className="p-6 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700/30 backdrop-blur-sm">
                   <div className="flex items-center gap-3 mb-4">
@@ -715,29 +693,6 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
 
                 {/* Detailed email processing list */}
                 {emailStatuses.length > 0 && renderEmailProcessingList()}
-              </div>
-            )}
-
-            {/* Payment Section */}
-            {showPayment && (
-              <div className="modal-element mb-8 p-6 bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl border border-gray-700/30 backdrop-blur-sm">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Zap className="w-8 h-8 text-yellow-400" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-200 mb-2">Upgrade Required</h3>
-                  <p className="text-gray-400 mb-6">
-                    You&apos;ve reached your free tier limit. Upgrade to continue validating emails with our premium AI
-                    engine.
-                  </p>
-                  <button
-                    onClick={handlePayment}
-                    className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-lime-400 to-emerald-500 text-gray-900 font-bold rounded-2xl hover:from-lime-500 hover:to-emerald-600 transition-all duration-300 transform hover:scale-105"
-                  >
-                    <span className="relative z-10">Upgrade for ₹100</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-lime-300 to-emerald-400 rounded-2xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
-                  </button>
-                </div>
               </div>
             )}
 
