@@ -13,7 +13,6 @@ import MyEmailTemplate from "./MyEmailTemplate.json";
 import { Template } from "../../../../types";
 import { useUser } from "@clerk/nextjs";
 
-// Define the Design type manually
 interface Design {
   body: {
     rows: any[];
@@ -55,7 +54,7 @@ const CreateTemplate: React.FC = () => {
     }, containerRef);
 
     return () => ctx.revert();
-  }, []); 
+  }, []);
 
   useEffect(() => {
     if (user?.id) {
@@ -72,14 +71,14 @@ const CreateTemplate: React.FC = () => {
     }
   };
 
-const loadDefaultTemplate = () => {
+  const loadDefaultTemplate = () => {
     const editor = emailEditorRef.current?.editor;
     if (editor) {
       editor.loadDesign({
         ...MyEmailTemplate,
         counters: (MyEmailTemplate as Design).counters ?? {},
       } as any);
-      setTemplate({ ...template, htmlContent: "" });
+      setTemplate({ ...template, htmlContent: "", subject: "", name: "" });
       setCurrentHtml("");
       toast.success("Default template loaded");
     }
@@ -91,6 +90,7 @@ const loadDefaultTemplate = () => {
       editor.exportHtml((data) => {
         const { html } = data;
         setCurrentHtml(html);
+        setTemplate({ ...template, htmlContent: html });
         setShowAnalyzer(true);
       });
     }
@@ -131,12 +131,17 @@ const loadDefaultTemplate = () => {
       });
       setCurrentHtml(selectedTemplate.html);
       setTemplateScore(selectedTemplate.score);
-      setTemplate({ ...template, name: selectedTemplate.title, htmlContent: selectedTemplate.html });
+      setTemplate({
+        ...template,
+        name: selectedTemplate.title,
+        htmlContent: selectedTemplate.html,
+        subject: selectedTemplate.subject || "",
+      });
       toast.success(`Loaded template: ${selectedTemplate.title}`);
     }
   };
 
-const applyFixedHtml = async (fixedHtml: string) => {
+  const applyFixedHtml = async (fixedHtml: string) => {
     const editor = emailEditorRef.current?.editor;
     if (editor) {
       try {
@@ -150,7 +155,6 @@ const applyFixedHtml = async (fixedHtml: string) => {
           toast.error("Failed to parse optimized HTML to design JSON");
           return;
         }
-        // Ensure counters is always defined and is Record<string, number>
         const safeDesign = {
           ...parsedDesign,
           counters: parsedDesign.counters ?? {},
@@ -175,6 +179,8 @@ const applyFixedHtml = async (fixedHtml: string) => {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Template downloaded");
+    } else {
+      toast.error("No HTML content to download");
     }
   };
 
@@ -360,7 +366,7 @@ const applyFixedHtml = async (fixedHtml: string) => {
                         },
                       },
                     },
-                   mergeTags: {
+                    mergeTags: {
                       first_name: { name: "First Name", value: "{{first_name}}" },
                       last_name: { name: "Last Name", value: "{{last_name}}" },
                       email: { name: "Email", value: "{{email}}" },
@@ -421,79 +427,47 @@ const applyFixedHtml = async (fixedHtml: string) => {
               </div>
             </div>
           </div>
-
-          <div className="p-4">
-            <div
-              className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 ${
-                previewDevice === "mobile"
-                  ? "max-w-sm mx-auto"
-                  : previewDevice === "tablet"
-                    ? "max-w-md mx-auto"
-                    : "w-full"
-              }`}
-            >
-              <div className="bg-gray-100 px-4 py-3 border-b">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                </div>
+          <div
+            className={`p-6 overflow-auto ${
+              previewDevice === "mobile"
+                ? "max-w-[375px] mx-auto"
+                : previewDevice === "tablet"
+                ? "max-w-[768px] mx-auto"
+                : "w-full"
+            }`}
+          >
+            {currentHtml || template.htmlContent ? (
+              <iframe
+                srcDoc={activeTab === "html" ? template.htmlContent : currentHtml}
+                className="w-full h-[600px] border-none rounded-lg"
+                title="Email Preview"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[600px] text-gray-400">
+                No preview available. Start designing or load a template.
               </div>
-              <div className="p-6 min-h-96 text-black">
-                {template.subject && (
-                  <div className="mb-4 pb-4 border-b border-gray-200">
-                    <h4 className="font-bold text-lg text-gray-800">{template.subject}</h4>
-                  </div>
-                )}
-                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-                  {activeTab === "html" && template.htmlContent ? (
-                    <iframe
-                      srcDoc={template.htmlContent}
-                      className="w-full h-96 border-none"
-                      title="HTML Preview"
-                    />
-                  ) : currentHtml ? (
-                    <iframe
-                      srcDoc={currentHtml}
-                      className="w-full h-96 border-none"
-                      title="Visual Editor Preview"
-                    />
-                  ) : (
-                    <div className="text-center text-gray-400 py-12">
-                      <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Your email preview will appear here as you design...</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Modals */}
       {showTemplateModal && (
         <TemplateModal
           onClose={() => setShowTemplateModal(false)}
           onSave={saveDesign}
+          templateName={template.name}
+          isLoading={isLoading}
         />
       )}
       {showConvertModal && (
         <ConvertModal
           onClose={() => setShowConvertModal(false)}
-          onConvert={(json) => {
-            const editor = emailEditorRef.current?.editor;
-            if (editor && json) {
-              const safeDesign = {
-                ...json,
-                counters: json.counters ?? {},
-              };
-              editor.loadDesign({
-                ...safeDesign,
-                counters: safeDesign.counters ?? {},
-              });
-              setActiveTab("visual");
-              toast.success("Converted template loaded");
-            }
+          onConvert={(html) => {
+            setTemplate({ ...template, htmlContent: html });
+            setCurrentHtml(html);
+            setShowConvertModal(false);
+            toast.success("HTML imported successfully");
           }}
         />
       )}

@@ -1,5 +1,4 @@
-// src/components/ConvertModal.tsx
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,6 +11,9 @@ const ConvertModal: React.FC<ConvertModalProps> = ({ onClose, onConvert }) => {
   const [htmlInput, setHtmlInput] = useState<string>("");
   const [convertedJson, setConvertedJson] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
+  const outputRef = useRef<HTMLDivElement>(null);
 
   const convertHtmlToJson = async () => {
     if (!htmlInput.trim()) {
@@ -164,49 +166,69 @@ Return only the JSON output, no explanations.`
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
-      <div className="bg-gradient-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-900 rounded-3xl shadow-2xl w-[90%] max-w-[1000px]">
-        <div className="relative px-8 pt-8 pb-6 border-b border-gray-300 dark:border-gray-700 bg-gradient-to-r from-cyan-500 to-blue-500">
-          <h2 className="text-3xl font-extrabold text-white">Convert HTML to JSON</h2>
-          <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-gray-200">
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+      <div
+        ref={modalRef}
+        className="relative w-[90%] max-w-[1000px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-lime-500/30 shadow-xl shadow-lime-500/10 p-8 font-mono"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 rounded-full bg-gray-700/50 text-lime-500 hover:bg-lime-500/20 hover:text-lime-400 transition-all"
+        >
+          <X size={20} />
+        </button>
+        <div className="mb-6">
+          <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-lime-600">
+            Convert HTML to Template
+          </h2>
         </div>
-        <div className="px-8 py-8 flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
-          <div className="w-full md:w-1/2 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">HTML Input</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div ref={inputRef} className="bg-gray-800/50 rounded-2xl p-6 border border-lime-500/20">
+            <h3 className="text-xl font-semibold text-lime-400 mb-4">HTML Input</h3>
             <textarea
               value={htmlInput}
               onChange={(e) => setHtmlInput(e.target.value)}
               placeholder="Paste your HTML email template here..."
-              className="w-full h-[300px] p-4 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white border border-gray-200 dark:border-gray-600"
+              className="w-full h-[300px] p-4 rounded-xl bg-gray-900/50 text-gray-200 border border-lime-500/30 focus:outline-none focus:ring-2 focus:ring-lime-400/50 transition-all resize-none text-sm placeholder-gray-400"
+              disabled={isLoading}
             />
             <button
               onClick={convertHtmlToJson}
               disabled={isLoading}
-              className={`mt-4 w-full py-3 rounded-xl text-white font-bold ${
-                isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-cyan-500 to-blue-500"
+              className={`mt-4 w-full py-3 rounded-xl font-bold text-gray-900 transition-all transform hover:scale-105 ${
+                isLoading ? "bg-gray-600/50 cursor-not-allowed" : "bg-gradient-to-r from-lime-500 to-green-600 hover:from-lime-600 hover:to-green-700"
               }`}
             >
               {isLoading ? "Converting..." : "Convert to JSON"}
             </button>
           </div>
-          <div className="w-full md:w-1/2 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Converted JSON</h3>
-            <textarea
-              value={convertedJson ? JSON.stringify(convertedJson, null, 2) : ""}
-              readOnly
-              placeholder="Converted JSON will appear here..."
-              className="w-full h-[300px] p-4 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white border border-gray-200 dark:border-gray-600"
-            />
+          <div ref={outputRef} className="bg-gray-800/50 rounded-2xl p-6 border border-lime-500/20">
+            <h3 className="text-xl font-semibold text-lime-400 mb-4">JSON Output</h3>
+            <div className="w-full h-[300px] p-4 rounded-xl bg-gray-900/50 border border-lime-500/30 overflow-auto">
+              {convertedJson ? (
+                <pre className="text-gray-200 text-sm">
+                  {JSON.stringify(convertedJson, null, 2)}
+                </pre>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                  JSON output will appear here after conversion...
+                </div>
+              )}
+            </div>
             <button
               onClick={() => {
-                onConvert(convertedJson);
-                onClose();
+                if (convertedJson) {
+                  onConvert(convertedJson);
+                  onClose();
+                } else {
+                  toast.error("No JSON content to apply");
+                }
               }}
-              disabled={!convertedJson}
-              className={`mt-4 w-full py-3 rounded-xl text-white font-bold ${
-                convertedJson ? "bg-gradient-to-r from-cyan-500 to-blue-500" : "bg-gray-400 cursor-not-allowed"
+              disabled={!convertedJson || isLoading}
+              className={`mt-4 w-full py-3 rounded-xl font-bold text-gray-900 transition-all transform hover:scale-105 ${
+                convertedJson && !isLoading
+                  ? "bg-gradient-to-r from-lime-500 to-green-600 hover:from-lime-600 hover:to-green-700"
+                  : "bg-gray-600/50 cursor-not-allowed"
               }`}
             >
               Use This Template

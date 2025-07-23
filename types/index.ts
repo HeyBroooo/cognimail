@@ -1,4 +1,3 @@
-// src/types/index.ts
 export interface UserInterface {
   userId: string;
   username: string;
@@ -17,18 +16,10 @@ export interface Template {
   html: string;
   plaintext: string;
   score: number;
-  createdAt: import("firebase/firestore").Timestamp;
+  createdAt: any;
+  subject?: string;
 }
 
-export interface AnalysisWarning {
-  type: "error" | "warning" | "info";
-  message: string;
-  code: string;
-  suggestion?: string;
-  location?: string;
-  replacementText?: string;
-  element?: HTMLElement;
-}
 
 export interface EmailMetrics {
   textToImageRatio: number;
@@ -41,8 +32,19 @@ export interface EmailMetrics {
   totalScore: number;
   companyName?: string;
   address?: string;
-  imageStatus?: string;
-  verificationStatus?: "Valid" | "Invalid" | "Insufficient data" | "Not verified";
-  privacyPolicyStatus?: "Valid" | "Invalid" | "Missing";
+  imageStatus: string;
+  verificationStatus: "Valid" | "Invalid" | "Insufficient data" | "Not verified";
+  privacyPolicyStatus: "Valid" | "Invalid" | "Missing";
   privacyPolicyUrl?: string;
+  puterResponse: string; // Added to store raw Puter AI response
+}
+
+export interface AnalysisWarning {
+  type: "error" | "warning" | "info";
+  message: string;
+  code: string;
+  suggestion?: string;
+  location?: string;
+  replacementText?: string;
+  element?: HTMLElement;
 }

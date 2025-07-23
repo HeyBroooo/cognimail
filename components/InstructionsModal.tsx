@@ -1,58 +1,96 @@
-// src/components/InstructionsModal.tsx
-import React from "react";
+"use client";
+import React, { useEffect, useRef } from "react";
 import { X, CheckCircle, AlertCircle, Info, Zap } from "lucide-react";
+import { gsap } from "gsap";
 
 interface InstructionsModalProps {
   onClose: () => void;
 }
 
 const InstructionsModal: React.FC<InstructionsModalProps> = ({ onClose }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(modalRef.current, {
+        scale: 0.9,
+        opacity: 0,
+        duration: 0.5,
+        ease: "power3.out",
+      });
+      gsap.from(".instruction-item", {
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        stagger: 0.15,
+        ease: "power2.out",
+        delay: 0.3,
+      });
+    }, modalRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-[90%] max-w-[500px]">
-        <div className="relative px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center">
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-400 w-10 h-10 rounded-full flex items-center justify-center mr-3">
-              <Info size={20} className="text-white" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+      <div
+        ref={modalRef}
+        className="relative w-[90%] max-w-[520px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-lime-500/30 shadow-xl shadow-lime-500/10 p-6 font-mono"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 rounded-full bg-gray-700/50 text-lime-500 hover:bg-lime-500/20 hover:text-lime-400 transition-all"
+        >
+          <X size={20} />
+        </button>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-lime-500 rounded-full flex items-center justify-center">
+            <Info size={20} className="text-gray-900" />
+          </div>
+          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-lime-600">
+            Template Instructions
+          </h2>
+        </div>
+        <ul className="space-y-5">
+          <li className="instruction-item flex items-start gap-3">
+            <CheckCircle size={20} className="text-lime-500 mt-1" />
+            <p className="text-gray-200 text-sm">
+              Score above <span className="font-bold text-lime-400">90%</span> required to send emails.
+            </p>
+          </li>
+          <li className="instruction-item flex items-start gap-3">
+            <AlertCircle size={20} className="text-red-500 mt-1" />
+            <p className="text-gray-200 text-sm">
+              No <span className="font-bold text-red-400">gaming content</span> allowed.
+            </p>
+          </li>
+          <li className="instruction-item flex items-start gap-3">
+            <Zap size={20} className="text-lime-500 mt-1" />
+            <p className="text-gray-200 text-sm">
+              Changing <span className="font-bold text-lime-400">mandatory data</span> prohibited.
+            </p>
+          </li>
+          <li className="instruction-item flex items-start gap-3">
+            <Info size={20} className="text-lime-500 mt-1" />
+            <div>
+              <p className="text-gray-200 text-sm">Follow email design best practices.</p>
+              <p className="text-xs text-gray-400">
+                Use <span className="font-semibold text-lime-400">JPEG, PNG, or GIF</span> for images.
+              </p>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Instructions</h2>
-          </div>
-          <button onClick={onClose} className="absolute top-6 right-6 text-gray-500 hover:text-gray-700">
-            <X size={20} />
-          </button>
+          </li>
+        </ul>
+        <div className="mt-6 p-4 bg-red-900/20 border border-red-700/30 rounded-lg">
+          <p className="text-red-400 text-xs">
+            Note: Templates with a score below <span className="font-bold">90%</span> or unsupported image formats (e.g., AVIF) cannot be used.
+          </p>
         </div>
-        <div className="px-6 py-5">
-          <ul className="space-y-4">
-            <li className="flex items-start">
-              <CheckCircle size={20} className="text-blue-600 mr-3" />
-              <p className="text-gray-800 dark:text-white">Score above 90% is required to send emails.</p>
-            </li>
-            <li className="flex items-start">
-              <AlertCircle size={20} className="text-red-600 mr-3" />
-              <p className="text-gray-800 dark:text-white">No gaming content is allowed.</p>
-            </li>
-            <li className="flex items-start">
-              <Zap size={20} className="text-yellow-600 mr-3" />
-              <p className="text-gray-800 dark:text-white">Changing mandatory data is prohibited.</p>
-            </li>
-            <li className="flex items-start">
-              <Info size={20} className="text-green-600 mr-3" />
-              <div>
-                <p className="text-gray-800 dark:text-white">Follow best practices for email design.</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Use JPEG, PNG, or GIF for images.</p>
-              </div>
-            </li>
-          </ul>
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">Note: Templates with a score below 90% or unsupported image formats (e.g., AVIF) cannot be used to send emails.</p>
-          </div>
-        </div>
-        <div className="px-6 py-5 bg-gray-50 dark:bg-gray-700">
+        <div className="mt-6">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl"
+            className="w-full py-3 bg-gradient-to-r from-lime-500 to-green-600 text-gray-900 font-bold rounded-xl hover:bg-gradient-to-r hover:from-lime-600 hover:to-green-700 transition-all transform hover:scale-105"
           >
-            Got it!
+            Understood
           </button>
         </div>
       </div>

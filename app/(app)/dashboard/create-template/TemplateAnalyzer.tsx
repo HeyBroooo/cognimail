@@ -1,6 +1,5 @@
-// src/components/TemplateAnalyzer.tsx
 import React, { useEffect, useState, useRef } from "react";
-import { AlertCircle, X, CheckCircle, Info, Zap, Eye, ArrowRight, Bot } from "lucide-react";
+import { AlertCircle, X, CheckCircle, Info, Zap, Eye } from "lucide-react";
 import { gsap } from "gsap";
 import { toast } from "sonner";
 import { AnalysisWarning, EmailMetrics } from "@/types";
@@ -220,6 +219,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     verificationStatus: "Not verified",
     imageStatus: "0/0 uploaded",
     privacyPolicyStatus: "Missing",
+    puterResponse: "", // Added to store raw Puter AI response
   });
   const [optimizedVersion, setOptimizedVersion] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"issues" | "metrics" | "optimized">("issues");
@@ -250,7 +250,11 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     );
   }, []);
 
-  const extractCompanyDetails = async (text: string): Promise<{ companyName?: string; address?: string }> => {
+  const extractCompanyDetails = async (text: string): Promise<{
+    companyName?: string;
+    address?: string;
+    rawResponse: string;
+  }> => {
     const response = await (window as any).puter.ai.chat(
       `Extract the company name and physical address from the following text. Look for explicit labels like "Company Name = [value]" or "Company Address = [value]" as well as natural text where a company name or address might be mentioned. If the value is empty, a placeholder (e.g., {{...}}), or not found, return "Not detected" for that field. Return the result as a JSON object with keys "companyName" and "address":\n\n${text}`
     );
@@ -275,14 +279,18 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       console.warn("Failed to parse AI response as JSON:", e);
     }
 
-    return { companyName, address };
+    return { companyName, address, rawResponse: response };
   };
 
-  const verifyCompanyDetails = async (companyName: string, address: string): Promise<string> => {
+  const verifyCompanyDetails = async (companyName: string, address: string): Promise<"Valid" | "Invalid" | "Insufficient data" | "Not verified"> => {
     const response = await (window as any).puter.ai.chat(
       `Verify if the following company name and address are plausible and consistent:\nCompany Name: ${companyName}\nAddress: ${address}\nReturn "Valid", "Invalid", or "Insufficient data"`
     );
-    return response.trim();
+    const trimmedResponse = response.trim();
+    if (["Valid", "Invalid", "Insufficient data"].includes(trimmedResponse)) {
+      return trimmedResponse as "Valid" | "Invalid" | "Insufficient data";
+    }
+    return "Not verified";
   };
 
   const getEnhancedSuggestion = async (issue: string): Promise<string> => {
@@ -304,13 +312,14 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     const footer = doc.querySelector("footer");
     const textToAnalyze = footer ? footer.textContent || bodyText : bodyText;
 
-    const { companyName, address } = await extractCompanyDetails(textToAnalyze);
+    const { companyName, address, rawResponse } = await extractCompanyDetails(textToAnalyze);
     const privacyPolicyResult = await detectPrivacyPolicy(html);
 
     setMetrics((prev) => ({
       ...prev,
       privacyPolicyUrl: privacyPolicyResult.url,
       privacyPolicyStatus: privacyPolicyResult.status,
+      puterResponse: rawResponse, // Store raw Puter AI response
     }));
 
     if (companyName === "Not detected" || !companyName) {
@@ -643,6 +652,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       verificationStatus,
       privacyPolicyStatus: privacyPolicyResult.status,
       privacyPolicyUrl: privacyPolicyResult.url,
+      puterResponse: rawResponse, // Store raw Puter AI response
     });
 
     setWarnings(newWarnings);
@@ -968,7 +978,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       <div className="p-4 max-h-[70vh] overflow-y-auto tab-content">
         {isLoading && (
           <div className="flex flex-col justify-center items-center py-8">
-            <Bot size={32} className="text-lime-400 animate-pulse" />
+            <Zap size={32} className="text-lime-400 animate-pulse" />
             <p className="text-gray-300 mt-2">Analyzing with AI...</p>
           </div>
         )}
@@ -1180,18 +1190,19 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "Spam Score", value: metrics.spamScore },
-                { label: "Compliance", value: metrics.complianceScore },
-                { label: "Subject Line", value: metrics.subjectLineScore },
-                { label: "CTA Quality", value: metrics.ctaScore },
-                { label: "Mobile-Friendly", value: metrics.mobileScore },
-                { label: "Text/Image Ratio", value: metrics.textToImageRatio, unit: "" },
-                { label: "Image Status", value: metrics.imageStatus, colorFn: getImageStatusColor },
-                { label: "Privacy Policy", value: metrics.privacyPolicyStatus, colorFn: getPrivacyPolicyColor },
-                { label: "Company Name", value: metrics.companyName || "Not detected", colorFn: (v: string) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
-                { label: "Physical Address", value: metrics.address || "Not detected", colorFn: (v: string) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
-                { label: "Verification Status", value: metrics.verificationStatus, colorFn: getVerificationColor },
-                { label: "Link Count", value: metrics.linkCount, colorFn: (v: number) => (v > 5 ? "text-yellow-400" : "text-green-400") },
+                { label: "Spam Score", value: metrics.spamScore, colorFn: getScoreColor as (value: number | string) => string },
+                { label: "Compliance", value: metrics.complianceScore, colorFn: getScoreColor as (value: number | string) => string },
+                { label: "Subject Line", value: metrics.subjectLineScore, colorFn: getScoreColor as (value: number | string) => string },
+                { label: "CTA Quality", value: metrics.ctaScore, colorFn: getScoreColor as (value: number | string) => string },
+                { label: "Mobile-Friendly", value: metrics.mobileScore, colorFn: getScoreColor as (value: number | string) => string },
+                { label: "Text/Image Ratio", value: metrics.textToImageRatio, unit: "", colorFn: getScoreColor as (value: number | string) => string },
+                { label: "Image Status", value: metrics.imageStatus, colorFn: getImageStatusColor as (value: string | number) => string },
+                { label: "Privacy Policy", value: metrics.privacyPolicyStatus, colorFn: getPrivacyPolicyColor as (value: string | number) => string },
+                { label: "Company Name", value: metrics.companyName || "Not detected", colorFn: (v: string | number) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
+                { label: "Physical Address", value: metrics.address || "Not detected", colorFn: (v: string | number) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
+                { label: "Verification Status", value: metrics.verificationStatus, colorFn: getVerificationColor as (value: string | number) => string },
+                { label: "Link Count", value: metrics.linkCount, colorFn: (v: string | number) => (Number(v) > 5 ? "text-yellow-400" : "text-green-400") },
+                { label: "Puter AI Response", value: metrics.puterResponse || "No response", colorFn: (v: string | number) => (v !== "No response" ? "text-blue-400" : "text-gray-400") },
               ].map((metric, index) => (
                 <div
                   key={metric.label}
@@ -1199,9 +1210,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                 >
                   <p className="text-xs text-gray-400">{metric.label}</p>
                   <p
-                    className={`text-sm font-bold ${
-                      metric.colorFn ? metric.colorFn(metric.value) : getScoreColor(metric.value)
-                    }`}
+                    className={`text-sm font-bold ${metric.colorFn(metric.value)}`}
                   >
                     {metric.unit !== undefined ? metric.value + metric.unit : metric.value}
                   </p>

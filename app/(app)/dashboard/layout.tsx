@@ -145,8 +145,8 @@ export default function DashboardLayout({
                     href={item.href}
                     className={`nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium  border-lime-300/80 transition-all duration-200 group ${
                       isActive
-                        ? "bg-lime-400/20 text-lime-400 border border-lime-400/80 shadow-lg shadow-lime-400/50"
-                        : "text-gray-300 hover:bg-gray-700/50  hover:text-white hover:border hover:border-lime-300/80"
+                        ? "bg-lime-400/40 text-lime-400 border border-lime-400/80 shadow-lg shadow-lime-400/50"
+                        : "text-gray-300 hover:bg-lime-500/40  hover:text-white hover:border hover:border-lime-300/80"
                     }`}
                   >
                     <Icon className={`w-5 h-5 ${isActive ? "text-lime-400" : "text-gray-400  group-hover:text-white"}`} />
