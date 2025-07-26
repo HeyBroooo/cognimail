@@ -2,16 +2,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { AlertCircle, X, CheckCircle, Info, Zap, Eye } from "lucide-react";
 import { gsap } from "gsap";
 import { toast } from "sonner";
-import { AnalysisWarning, EmailMetrics } from "@/types";
+// Removed: import { AnalysisWarning, EmailMetrics } from "@/types";
 
-interface TemplateAnalyzerProps {
-  html: string;
-  onClose: () => void;
-  onApplyFix: (fixedHtml: string) => void;
-  onScoreUpdate?: (score: number) => void;
-}
 
-const SPAM_WORDS_REPLACEMENTS: { [key: string]: string } = {
+const SPAM_WORDS_REPLACEMENTS = {
   free: "complimentary",
   Free: "Complimentary",
   offer: "opportunity",
@@ -79,19 +73,9 @@ const CTA_BEST_PRACTICES = [
   },
 ];
 
-interface PrivacyPolicyResult {
-  status: "Valid" | "Invalid" | "Missing";
-  details: string;
-  url?: string;
-}
 
-interface CompanyDetails {
-  companyName?: string;
-  address?: string;
-  rawResponse: string;
-}
 
-const detectPrivacyPolicy = async (html: string): Promise<PrivacyPolicyResult> => {
+const detectPrivacyPolicy = async (html) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
   const links = Array.from(doc.querySelectorAll("a"));
@@ -209,14 +193,14 @@ const detectPrivacyPolicy = async (html: string): Promise<PrivacyPolicyResult> =
   };
 };
 
-const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
+const TemplateAnalyzer =  ({
   html,
   onClose,
   onApplyFix,
   onScoreUpdate,
 }) => {
-  const [warnings, setWarnings] = useState<AnalysisWarning[]>([]);
-  const [metrics, setMetrics] = useState<EmailMetrics>({
+  const [warnings, setWarnings] = useState([]); // Removed type
+  const [metrics, setMetrics] = useState({
     textToImageRatio: 0,
     linkCount: 0,
     spamScore: 100,
@@ -230,14 +214,14 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     privacyPolicyStatus: "Missing",
     puterResponse: "",
   });
-  const [optimizedVersion, setOptimizedVersion] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"issues" | "metrics" | "optimized">("issues");
-  const [highlightMode, setHighlightMode] = useState<boolean>(false);
-  const [showOptimizedPreview, setShowOptimizedPreview] = useState<boolean>(false);
-  const [fixesApplied, setFixesApplied] = useState<boolean>(false);
-  const [showLegalPrompt, setShowLegalPrompt] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const analyzerRef = useRef<HTMLDivElement>(null);
+  const [optimizedVersion, setOptimizedVersion] = useState("");
+  const [activeTab, setActiveTab] = useState("issues");
+  const [highlightMode, setHighlightMode] = useState(false);
+  const [showOptimizedPreview, setShowOptimizedPreview] = useState(false);
+  const [fixesApplied, setFixesApplied] = useState(false);
+  const [showLegalPrompt, setShowLegalPrompt] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const analyzerRef = useRef(null);
 
 
 
@@ -254,8 +238,8 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     );
   }, []);
 
-  const extractCompanyDetails = async (text: string): Promise<CompanyDetails> => {
-    const response = await (window as any).puter.ai.chat(
+  const extractCompanyDetails = async (text) => {
+    const response = await (window).puter.ai.chat(
       `Extract the company name and physical address from the following text. Look for explicit labels like "Company Name = [value]" or "Company Address = [value]" as well as natural text where a company name or address might be mentioned. If the value is empty, a placeholder (e.g., {{...}}), or not found, return "Not detected" for that field. Return the result as a JSON object with keys "companyName" and "address":\n\n${text}`
     );
 
@@ -282,27 +266,27 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     return { companyName, address, rawResponse: response };
   };
 
-  const verifyCompanyDetails = async (companyName: string, address: string): Promise<"Valid" | "Invalid" | "Insufficient data" | "Not verified"> => {
-    const response = await (window as any).puter.ai.chat(
+  const verifyCompanyDetails = async (companyName, address) => {
+    const response = await (window).puter.ai.chat(
       `Verify if the following company name and address are plausible and consistent:\nCompany Name: ${companyName}\nAddress: ${address}\nReturn "Valid", "Invalid", or "Insufficient data"`
     );
     const trimmedResponse = response.trim();
     if (["Valid", "Invalid", "Insufficient data"].includes(trimmedResponse)) {
-      return trimmedResponse as "Valid" | "Invalid" | "Insufficient data";
+      return trimmedResponse;
     }
     return "Not verified";
   };
 
-  const getEnhancedSuggestion = async (issue: string): Promise<string> => {
-    const response = await (window as any).puter.ai.chat(
+  const getEnhancedSuggestion = async (issue) => {
+    const response = await (window).puter.ai.chat(
       `Provide a clear and actionable suggestion to fix the following email template issue. Include specific steps or examples where applicable: ${issue}`
     );
     return response.trim();
   };
 
-  const analyzeTemplate = async (html: string) => {
+  const analyzeTemplate = async (html) => {
     setIsLoading(true);
-    const newWarnings: AnalysisWarning[] = [];
+    const newWarnings = [];
     let scoreDeduction = 0;
     let complianceScoreAdjustment = 0;
 
@@ -416,8 +400,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       scoreDeduction += (totalImages - uploadedImages) * 4;
     }
 
-    let verificationStatus: "Valid" | "Invalid" | "Insufficient data" | "Not verified" =
-      "Not verified";
+    let verificationStatus = "Not verified";
     if (companyName !== "Not detected" && address !== "Not detected" && companyName && address) {
       verificationStatus = await verifyCompanyDetails(companyName, address);
       if (verificationStatus === "Invalid") {
@@ -499,7 +482,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
             code: "IMG_SIZE",
             suggestion: suggestionText,
             location: `Image #${uploadedImages > 0 ? imgIndex + 1 : imgIndex}`,
-            element: img as HTMLElement,
+            element: img,
           });
           scoreDeduction += 2;
         }
@@ -557,7 +540,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
           code: "LINK_TEXT",
           suggestion: suggestionText,
           location: `Link #${linkIndex + 1}`,
-          element: link as HTMLElement,
+          element: link,
         });
         scoreDeduction += 3;
       }
@@ -579,7 +562,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
           suggestion: suggestionText,
           location: matchingElement ? getElementPath(matchingElement) : undefined,
           replacementText: SPAM_WORDS_REPLACEMENTS[word],
-          element: matchingElement as HTMLElement,
+          element: matchingElement,
         });
         scoreDeduction += 3;
       }
@@ -597,7 +580,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
             code: "CTA_TEXT",
             suggestion: suggestionText,
             location: getElementPath(btn),
-            element: btn as HTMLElement,
+            element: btn,
           });
           scoreDeduction += 2;
         }
@@ -672,7 +655,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
 
 
 
-  const getElementPath = (element: Element): string => {
+  const getElementPath = (element) => {
     if (!element) return "Unknown";
     if (element.id) return `#${element.id}`;
     if (element.classList && element.classList.length)
@@ -688,14 +671,14 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     return tagName;
   };
 
-  const generateOptimizedVersion = (doc: Document, warnings: AnalysisWarning[]) => {
-    const optimizedDoc = doc.cloneNode(true) as Document;
+  const generateOptimizedVersion = (doc, warnings) => {
+    const optimizedDoc = doc.cloneNode(true);
     const footer = optimizedDoc.querySelector("footer") || optimizedDoc.body;
     let complianceDiv = optimizedDoc.querySelector(".compliance-section");
     if (!complianceDiv) {
       complianceDiv = optimizedDoc.createElement("div");
       complianceDiv.className = "compliance-section";
-      (complianceDiv as HTMLElement).style.cssText =
+      complianceDiv.style.cssText =
         "margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;";
       footer.appendChild(complianceDiv);
     }
@@ -807,7 +790,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     toast.success("Fixes applied successfully");
   };
 
-  const getSeverityColor = (type: "error" | "warning" | "info") => {
+  const getSeverityColor = (type) => {
     switch (type) {
       case "error":
         return "text-red-400";
@@ -818,7 +801,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     }
   };
 
-  const getSeverityIcon = (type: "error" | "warning" | "info") => {
+  const getSeverityIcon = (type) => {
     switch (type) {
       case "error":
         return <AlertCircle size={20} className="text-red-400" />;
@@ -829,13 +812,13 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     }
   };
 
-  const getScoreColor = (score: number) => {
+  const getScoreColor = (score) => {
     if (score >= 90) return "text-green-400";
     if (score >= 70) return "text-yellow-400";
     return "text-red-400";
   };
 
-  const getVerificationColor = (status: string | undefined) => {
+  const getVerificationColor = (status) => {
     switch (status) {
       case "Valid":
         return "text-green-400";
@@ -848,7 +831,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     }
   };
 
-  const getImageStatusColor = (status: string | undefined) => {
+  const getImageStatusColor = (status) => {
     if (!status) return "text-gray-400";
     const [uploaded, total] = status.split("/").map(Number);
     if (total === 0) return "text-yellow-400";
@@ -856,7 +839,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     return "text-red-400";
   };
 
-  const getPrivacyPolicyColor = (status: string | undefined) => {
+  const getPrivacyPolicyColor = (status) => {
     switch (status) {
       case "Valid":
         return "text-green-400";
@@ -963,7 +946,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                 : "text-gray-400 hover:text-white hover:bg-gray-700/30"
             }`}
             onClick={() => {
-              setActiveTab(tab as "issues" | "metrics" | "optimized");
+              setActiveTab(tab);
               gsap.fromTo(
                 ".tab-content",
                 { opacity: 0, y: 10 },
@@ -1197,19 +1180,19 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "Spam Score", value: metrics.spamScore, colorFn: getScoreColor as (value: number | string) => string },
-                { label: "Compliance", value: metrics.complianceScore, colorFn: getScoreColor as (value: number | string) => string },
-                { label: "Subject Line", value: metrics.subjectLineScore, colorFn: getScoreColor as (value: number | string) => string },
-                { label: "CTA Quality", value: metrics.ctaScore, colorFn: getScoreColor as (value: number | string) => string },
-                { label: "Mobile-Friendly", value: metrics.mobileScore, colorFn: getScoreColor as (value: number | string) => string },
-                { label: "Text/Image Ratio", value: metrics.textToImageRatio, unit: "", colorFn: getScoreColor as (value: number | string) => string },
-                { label: "Image Status", value: metrics.imageStatus, colorFn: getImageStatusColor as (value: string | number) => string },
-                { label: "Privacy Policy", value: metrics.privacyPolicyStatus, colorFn: getPrivacyPolicyColor as (value: string | number) => string },
-                { label: "Company Name", value: metrics.companyName || "Not detected", colorFn: (v: string | number) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
-                { label: "Physical Address", value: metrics.address || "Not detected", colorFn: (v: string | number) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
-                { label: "Verification Status", value: metrics.verificationStatus, colorFn: getVerificationColor as (value: string | number) => string },
-                { label: "Link Count", value: metrics.linkCount, colorFn: (v: string | number) => (Number(v) > 5 ? "text-yellow-400" : "text-green-400") },
-                { label: "Puter AI Response", value: metrics.puterResponse || "No response", colorFn: (v: string | number) => (v !== "No response" ? "text-blue-400" : "text-gray-400") },
+                { label: "Spam Score", value: metrics.spamScore, colorFn: getScoreColor },
+                { label: "Compliance", value: metrics.complianceScore, colorFn: getScoreColor },
+                { label: "Subject Line", value: metrics.subjectLineScore, colorFn: getScoreColor },
+                { label: "CTA Quality", value: metrics.ctaScore, colorFn: getScoreColor },
+                { label: "Mobile-Friendly", value: metrics.mobileScore, colorFn: getScoreColor },
+                { label: "Text/Image Ratio", value: metrics.textToImageRatio, unit: "", colorFn: getScoreColor },
+                { label: "Image Status", value: metrics.imageStatus, colorFn: getImageStatusColor },
+                { label: "Privacy Policy", value: metrics.privacyPolicyStatus, colorFn: getPrivacyPolicyColor },
+                { label: "Company Name", value: metrics.companyName || "Not detected", colorFn: (v) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
+                { label: "Physical Address", value: metrics.address || "Not detected", colorFn: (v) => (v !== "Not detected" ? "text-green-400" : "text-red-400") },
+                { label: "Verification Status", value: metrics.verificationStatus, colorFn: getVerificationColor },
+                { label: "Link Count", value: metrics.linkCount, colorFn: (v) => (Number(v) > 5 ? "text-yellow-400" : "text-green-400") },
+                { label: "Puter AI Response", value: metrics.puterResponse || "No response", colorFn: (v) => (v !== "No response" ? "text-blue-400" : "text-gray-400") },
               ].map((metric) => (
                 <div
                   key={metric.label}
