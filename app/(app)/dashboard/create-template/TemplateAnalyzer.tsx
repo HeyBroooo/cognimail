@@ -79,11 +79,19 @@ const CTA_BEST_PRACTICES = [
   },
 ];
 
-const detectPrivacyPolicy = async (html: string): Promise<{
+interface PrivacyPolicyResult {
   status: "Valid" | "Invalid" | "Missing";
   details: string;
   url?: string;
-}> => {
+}
+
+interface CompanyDetails {
+  companyName?: string;
+  address?: string;
+  rawResponse: string;
+}
+
+const detectPrivacyPolicy = async (html: string): Promise<PrivacyPolicyResult> => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
   const links = Array.from(doc.querySelectorAll("a"));
@@ -187,7 +195,8 @@ const detectPrivacyPolicy = async (html: string): Promise<{
         details: "Valid privacy policy link found",
         url: href,
       };
-    } catch (e) {
+    } catch (error) {
+      console.log("Invalid URL in privacy policy link:", error);
       continue;
     }
   }
@@ -219,7 +228,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     verificationStatus: "Not verified",
     imageStatus: "0/0 uploaded",
     privacyPolicyStatus: "Missing",
-    puterResponse: "", // Added to store raw Puter AI response
+    puterResponse: "",
   });
   const [optimizedVersion, setOptimizedVersion] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"issues" | "metrics" | "optimized">("issues");
@@ -230,11 +239,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const analyzerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (html) {
-      analyzeTemplate(html);
-    }
-  }, [html]);
+
 
   useEffect(() => {
     const legalPromptDismissed = localStorage.getItem("legalPromptDismissed");
@@ -242,7 +247,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       setShowLegalPrompt(false);
     }
 
-    // GSAP animation for panel entrance
     gsap.fromTo(
       analyzerRef.current,
       { x: 400, opacity: 0 },
@@ -250,11 +254,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     );
   }, []);
 
-  const extractCompanyDetails = async (text: string): Promise<{
-    companyName?: string;
-    address?: string;
-    rawResponse: string;
-  }> => {
+  const extractCompanyDetails = async (text: string): Promise<CompanyDetails> => {
     const response = await (window as any).puter.ai.chat(
       `Extract the company name and physical address from the following text. Look for explicit labels like "Company Name = [value]" or "Company Address = [value]" as well as natural text where a company name or address might be mentioned. If the value is empty, a placeholder (e.g., {{...}}), or not found, return "Not detected" for that field. Return the result as a JSON object with keys "companyName" and "address":\n\n${text}`
     );
@@ -275,8 +275,8 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
         !parsedResult.address.match(/^{{.*}}$/)
           ? parsedResult.address
           : "Not detected";
-    } catch (e) {
-      console.warn("Failed to parse AI response as JSON:", e);
+    } catch (error) {
+      console.warn("Failed to parse AI response as JSON:", error);
     }
 
     return { companyName, address, rawResponse: response };
@@ -319,44 +319,44 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       ...prev,
       privacyPolicyUrl: privacyPolicyResult.url,
       privacyPolicyStatus: privacyPolicyResult.status,
-      puterResponse: rawResponse, // Store raw Puter AI response
+      puterResponse: rawResponse,
     }));
 
     if (companyName === "Not detected" || !companyName) {
-      const suggestion = await getEnhancedSuggestion("Missing company name");
+      const suggestionText = await getEnhancedSuggestion("Missing company name");
       newWarnings.push({
         type: "error",
         message: "Company name not detected or empty",
         code: "COMPLIANCE_COMPANY",
-        suggestion,
+        suggestion: suggestionText,
       });
       complianceScoreAdjustment += 15;
       scoreDeduction += 10;
     }
 
     if (address === "Not detected" || !address) {
-      const suggestion = await getEnhancedSuggestion("Missing physical address");
+      const suggestionText = await getEnhancedSuggestion("Missing physical address");
       newWarnings.push({
         type: "error",
         message: "Physical address not detected or invalid",
         code: "COMPLIANCE_ADDRESS",
-        suggestion,
+        suggestion: suggestionText,
       });
       complianceScoreAdjustment += 15;
       scoreDeduction += 10;
     }
 
     if (privacyPolicyResult.status !== "Valid") {
-      let suggestion = "";
+      let suggestionText = "";
       if (privacyPolicyResult.status === "Missing") {
-        suggestion = "Add a valid privacy policy link in the email footer (e.g., '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>'). Ensure it uses 'Privacy Policy' or its equivalent in your language and points to your actual policy page.";
+        suggestionText = "Add a valid privacy policy link in the email footer (e.g., '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>'). Ensure it uses 'Privacy Policy' or its equivalent in your language and points to your actual policy page.";
       } else if (privacyPolicyResult.url) {
         if (privacyPolicyResult.url.includes("{{")) {
-          suggestion = "Replace the template variable in your privacy policy link with a valid URL (e.g., '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>').";
+          suggestionText = "Replace the template variable in your privacy policy link with a valid URL (e.g., '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>').";
         } else if (privacyPolicyResult.url.includes("google.com")) {
-          suggestion = "Replace the generic Google link with your actual privacy policy URL (e.g., '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>').";
+          suggestionText = "Replace the generic Google link with your actual privacy policy URL (e.g., '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>').";
         } else {
-          suggestion = "Ensure the privacy policy link is valid and points to your policy page. Manually replace any incorrect links with '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>'.";
+          suggestionText = "Ensure the privacy policy link is valid and points to your policy page. Manually replace any incorrect links with '<a href=\"https://yourwebsite.com/privacy\">Privacy Policy</a>'.";
         }
       }
 
@@ -364,7 +364,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
         type: privacyPolicyResult.status === "Missing" ? "error" : "warning",
         message: privacyPolicyResult.details,
         code: "COMPLIANCE_PRIVACY",
-        suggestion,
+        suggestion: suggestionText,
         location: privacyPolicyResult.url ? `Link: ${privacyPolicyResult.url}` : undefined,
       });
       complianceScoreAdjustment += privacyPolicyResult.status === "Missing" ? 15 : 10;
@@ -395,23 +395,23 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
 
     const imageStatus = `${uploadedImages}/${totalImages} uploaded`;
     if (totalImages === 0) {
-      const suggestion = await getEnhancedSuggestion("No images found in template");
+      const suggestionText = await getEnhancedSuggestion("No images found in template");
       newWarnings.push({
         type: "warning",
         message: "No images found in template",
         code: "IMAGE_MISSING",
-        suggestion: "Add at least one image to improve engagement (e.g., '<img src=\"https://yourwebsite.com/image.jpg\" alt=\"Product Image\" width=\"600\">').",
+        suggestion: suggestionText,
       });
       scoreDeduction += 5;
     } else if (uploadedImages < totalImages) {
-      const suggestion = await getEnhancedSuggestion(
+      const suggestionText = await getEnhancedSuggestion(
         `${uploadedImages}/${totalImages} images uploaded`
       );
       newWarnings.push({
         type: "warning",
         message: `${uploadedImages}/${totalImages} images uploaded`,
         code: "PARTIAL_IMAGE_UPLOAD",
-        suggestion: "Replace placeholder or empty image sources with valid URLs (e.g., '<img src=\"https://yourwebsite.com/image.jpg\" alt=\"Image\" width=\"600\">').",
+        suggestion: suggestionText,
       });
       scoreDeduction += (totalImages - uploadedImages) * 4;
     }
@@ -421,14 +421,14 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     if (companyName !== "Not detected" && address !== "Not detected" && companyName && address) {
       verificationStatus = await verifyCompanyDetails(companyName, address);
       if (verificationStatus === "Invalid") {
-        const suggestion = await getEnhancedSuggestion(
+        const suggestionText = await getEnhancedSuggestion(
           `Company name "${companyName}" and address "${address}" may be inconsistent or invalid`
         );
         newWarnings.push({
           type: "error",
           message: `Company name "${companyName}" and address "${address}" may be inconsistent or invalid`,
           code: "COMPLIANCE_VERIFICATION",
-          suggestion,
+          suggestion: suggestionText,
         });
         complianceScoreAdjustment += 10;
         scoreDeduction += 8;
@@ -438,12 +438,12 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     const subjectElement = doc.querySelector('meta[name="subject"], title, h1, h2');
     const subjectLine = subjectElement?.textContent || "";
     if (subjectLine.length > 50) {
-      const suggestion = await getEnhancedSuggestion("Subject line too long");
+      const suggestionText = await getEnhancedSuggestion("Subject line too long");
       newWarnings.push({
         type: "warning",
         message: "Subject line too long",
         code: "SUBJECT_LENGTH",
-        suggestion,
+        suggestion: suggestionText,
         location: "Subject line",
         replacementText: subjectLine.substring(0, 47) + "...",
       });
@@ -452,14 +452,14 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
 
     for (const word of Object.keys(SPAM_WORDS_REPLACEMENTS)) {
       if (subjectLine.toLowerCase().includes(word.toLowerCase())) {
-        const suggestion = await getEnhancedSuggestion(
+        const suggestionText = await getEnhancedSuggestion(
           `Subject contains spam trigger word "${word}"`
         );
         newWarnings.push({
           type: "warning",
           message: `Subject contains spam trigger word "${word}"`,
           code: "SUBJECT_SPAM",
-          suggestion,
+          suggestion: suggestionText,
           location: "Subject line",
           replacementText: SPAM_WORDS_REPLACEMENTS[word],
         });
@@ -472,33 +472,33 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     const textToImageRatio = imageCount > 0 ? textLength / imageCount : textLength;
 
     if (textToImageRatio < 500 && imageCount > 0) {
-      const suggestion = await getEnhancedSuggestion("Low text-to-image ratio");
+      const suggestionText = await getEnhancedSuggestion("Low text-to-image ratio");
       newWarnings.push({
         type: "warning",
         message: "Low text-to-image ratio",
         code: "TEXT_IMAGE_RATIO",
-        suggestion,
+        suggestion: suggestionText,
       });
       scoreDeduction += 5;
     }
 
-    Array.from(images).forEach(async (img, index) => {
+    Array.from(images).forEach(async (img, imgIndex) => {
       const src = img.getAttribute("src") || "";
       const isFooterImage = src.includes("safeburst.email");
       if (!isFooterImage) {
         if (!img.alt) {
-          img.setAttribute("alt", `Image ${uploadedImages > 0 ? index + 1 : index} - Email content`);
+          img.setAttribute("alt", `Image ${uploadedImages > 0 ? imgIndex + 1 : imgIndex} - Email content`);
         }
         if (img.width > 600) {
-          const suggestion = await getEnhancedSuggestion(
-            `Image #${uploadedImages > 0 ? index + 1 : index} is too wide (${img.width}px)`
+          const suggestionText = await getEnhancedSuggestion(
+            `Image #${uploadedImages > 0 ? imgIndex + 1 : imgIndex} is too wide (${img.width}px)`
           );
           newWarnings.push({
             type: "warning",
-            message: `Image #${uploadedImages > 0 ? index + 1 : index} is too wide (${img.width}px)`,
+            message: `Image #${uploadedImages > 0 ? imgIndex + 1 : imgIndex} is too wide (${img.width}px)`,
             code: "IMG_SIZE",
-            suggestion,
-            location: `Image #${uploadedImages > 0 ? index + 1 : index}`,
+            suggestion: suggestionText,
+            location: `Image #${uploadedImages > 0 ? imgIndex + 1 : imgIndex}`,
             element: img as HTMLElement,
           });
           scoreDeduction += 2;
@@ -514,12 +514,12 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
         requirement.key !== "address" &&
         requirement.key !== "company name"
       ) {
-        const suggestion = await getEnhancedSuggestion(`Missing ${requirement.description}`);
+        const suggestionText = await getEnhancedSuggestion(`Missing ${requirement.description}`);
         newWarnings.push({
           type: "error",
           message: `Missing ${requirement.description}`,
           code: "COMPLIANCE",
-          suggestion,
+          suggestion: suggestionText,
         });
         scoreDeduction += 10;
       }
@@ -531,32 +531,32 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     );
 
     if (links.length > 5) {
-      const suggestion = await getEnhancedSuggestion("Too many links");
+      const suggestionText = await getEnhancedSuggestion("Too many links");
       newWarnings.push({
         type: "warning",
         message: "Too many links",
         code: "LINK_COUNT",
-        suggestion,
+        suggestion: suggestionText,
       });
       scoreDeduction += 5;
     }
 
-    for (const [index, link] of Array.from(links).entries()) {
+    for (const [linkIndex, link] of Array.from(links).entries()) {
       const linkText = link.textContent?.trim() || "";
       if (
         linkText === "" ||
         linkText.toLowerCase() === "click here" ||
         linkText.toLowerCase() === "link"
       ) {
-        const suggestion = await getEnhancedSuggestion(
-          `Link #${index + 1} has generic text "${linkText}"`
+        const suggestionText = await getEnhancedSuggestion(
+          `Link #${linkIndex + 1} has generic text "${linkText}"`
         );
         newWarnings.push({
           type: "warning",
-          message: `Link #${index + 1} has generic text "${linkText}"`,
+          message: `Link #${linkIndex + 1} has generic text "${linkText}"`,
           code: "LINK_TEXT",
-          suggestion,
-          location: `Link #${index + 1}`,
+          suggestion: suggestionText,
+          location: `Link #${linkIndex + 1}`,
           element: link as HTMLElement,
         });
         scoreDeduction += 3;
@@ -571,12 +571,12 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
         const matchingElement = elements.find((el) =>
           el.textContent?.toLowerCase().includes(word.toLowerCase())
         );
-        const suggestion = await getEnhancedSuggestion(`Found spam trigger word "${word}"`);
+        const suggestionText = await getEnhancedSuggestion(`Found spam trigger word "${word}"`);
         newWarnings.push({
           type: "warning",
           message: `Found spam trigger word "${word}"`,
           code: "SPAM_WORD",
-          suggestion,
+          suggestion: suggestionText,
           location: matchingElement ? getElementPath(matchingElement) : undefined,
           replacementText: SPAM_WORDS_REPLACEMENTS[word],
           element: matchingElement as HTMLElement,
@@ -586,16 +586,16 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     }
 
     const buttons = doc.querySelectorAll('a[role="button"], button, .btn, .button, a.cta');
-    for (const [index, practice] of CTA_BEST_PRACTICES.entries()) {
-      for (const [btnIndex, btn] of Array.from(buttons).entries()) {
+    for (const practice of CTA_BEST_PRACTICES) {
+      for (const btn of Array.from(buttons)) {
         const text = btn.textContent?.trim() || "";
         if (practice.pattern.test(text)) {
-          const suggestion = await getEnhancedSuggestion(`CTA "${text}" could be improved`);
+          const suggestionText = await getEnhancedSuggestion(`CTA "${text}" could be improved`);
           newWarnings.push({
             type: "info",
             message: `CTA "${text}" could be improved`,
             code: "CTA_TEXT",
-            suggestion,
+            suggestion: suggestionText,
             location: getElementPath(btn),
             element: btn as HTMLElement,
           });
@@ -608,24 +608,24 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     const hasTables = !!doc.querySelector("table");
     const hasFixedWidths = !!doc.querySelector("[width]");
     if (!hasMeta) {
-      const suggestion = await getEnhancedSuggestion("Missing viewport meta tag");
+      const suggestionText = await getEnhancedSuggestion("Missing viewport meta tag");
       newWarnings.push({
         type: "warning",
         message: "Missing viewport meta tag",
         code: "RESPONSIVE",
-        suggestion,
+        suggestion: suggestionText,
       });
       scoreDeduction += 3;
     }
     if (hasTables && hasFixedWidths) {
-      const suggestion = await getEnhancedSuggestion(
+      const suggestionText = await getEnhancedSuggestion(
         "Fixed-width tables may not display well on mobile"
       );
       newWarnings.push({
         type: "warning",
         message: "Fixed-width tables may not display well on mobile",
         code: "RESPONSIVE",
-        suggestion,
+        suggestion: suggestionText,
       });
       scoreDeduction += 4;
     }
@@ -652,7 +652,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       verificationStatus,
       privacyPolicyStatus: privacyPolicyResult.status,
       privacyPolicyUrl: privacyPolicyResult.url,
-      puterResponse: rawResponse, // Store raw Puter AI response
+      puterResponse: rawResponse,
     });
 
     setWarnings(newWarnings);
@@ -663,6 +663,14 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     generateOptimizedVersion(doc, newWarnings);
     setIsLoading(false);
   };
+
+    useEffect(() => {
+    if (html) {
+      analyzeTemplate(html);
+    }
+  }, [html, analyzeTemplate]);
+
+
 
   const getElementPath = (element: Element): string => {
     if (!element) return "Unknown";
@@ -861,7 +869,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
     }
   };
 
-  // Categorize warnings
   const complianceWarnings = warnings.filter((w) =>
     ["COMPLIANCE", "COMPLIANCE_COMPANY", "COMPLIANCE_ADDRESS", "COMPLIANCE_PRIVACY", "COMPLIANCE_VERIFICATION"].includes(w.code)
   );
@@ -876,7 +883,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
       ref={analyzerRef}
       className="fixed right-4 top-4 w-full max-w-md bg-gray-800/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 z-50 text-white"
     >
-      {/* Header */}
       <div className="p-4 border-b border-gray-700/50 flex justify-between items-center">
         <h3 className="text-xl font-bold bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
           Template Analyzer
@@ -906,7 +912,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
         </div>
       </div>
 
-      {/* Legal Prompt */}
       {showLegalPrompt && (
         <div className="p-4 bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-b border-yellow-600/50">
           <div className="flex items-start gap-3">
@@ -948,7 +953,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
         </div>
       )}
 
-      {/* Tabs */}
       <div className="flex border-b border-gray-700/50">
         {["issues", "metrics", "optimized"].map((tab) => (
           <button
@@ -974,7 +978,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
         ))}
       </div>
 
-      {/* Content */}
       <div className="p-4 max-h-[70vh] overflow-y-auto tab-content">
         {isLoading && (
           <div className="flex flex-col justify-center items-center py-8">
@@ -997,7 +1000,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
               </div>
             ) : (
               <>
-                {/* Compliance Issues */}
                 {complianceWarnings.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-bold text-gray-200">Compliance Issues</h4>
@@ -1024,10 +1026,12 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                                 <p className="text-sm text-gray-200">
                                   Replace{" "}
                                   <span className="text-red-400">
-                                    "{warning.message.split('"')[1] || warning.message}"
+                                    &quot;{warning.message.split('"')[1] || warning.message}&quot;
                                   </span>{" "}
                                   with{" "}
-                                  <span className="text-green-400">"{warning.replacementText}"</span>
+                                  <span className="text-green-400">
+                                    &quot;{warning.replacementText}&quot;
+                                  </span>
                                 </p>
                               </div>
                             )}
@@ -1038,7 +1042,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                   </div>
                 )}
 
-                {/* Spam Issues */}
                 {spamWarnings.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-bold text-gray-200">Spam Triggers</h4>
@@ -1065,10 +1068,12 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                                 <p className="text-sm text-gray-200">
                                   Replace{" "}
                                   <span className="text-red-400">
-                                    "{warning.message.split('"')[1] || warning.message}"
+                                    &quot;{warning.message.split('"')[1] || warning.message}&quot;
                                   </span>{" "}
                                   with{" "}
-                                  <span className="text-green-400">"{warning.replacementText}"</span>
+                                  <span className="text-green-400">
+                                    &quot;{warning.replacementText}&quot;
+                                  </span>
                                 </p>
                               </div>
                             )}
@@ -1079,7 +1084,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                   </div>
                 )}
 
-                {/* Design Issues */}
                 {designWarnings.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-bold text-gray-200">Design Issues</h4>
@@ -1106,10 +1110,12 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                                 <p className="text-sm text-gray-200">
                                   Replace{" "}
                                   <span className="text-red-400">
-                                    "{warning.message.split('"')[1] || warning.message}"
+                                    &quot;{warning.message.split('"')[1] || warning.message}&quot;
                                   </span>{" "}
                                   with{" "}
-                                  <span className="text-green-400">"{warning.replacementText}"</span>
+                                  <span className="text-green-400">
+                                    &quot;{warning.replacementText}&quot;
+                                  </span>
                                 </p>
                               </div>
                             )}
@@ -1120,7 +1126,6 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                   </div>
                 )}
 
-                {/* CTA Issues */}
                 {ctaWarnings.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-bold text-gray-200">CTA & Subject Issues</h4>
@@ -1147,10 +1152,12 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                                 <p className="text-sm text-gray-200">
                                   Replace{" "}
                                   <span className="text-red-400">
-                                    "{warning.message.split('"')[1] || warning.message}"
+                                    &quot;{warning.message.split('"')[1] || warning.message}&quot;
                                   </span>{" "}
                                   with{" "}
-                                  <span className="text-green-400">"{warning.replacementText}"</span>
+                                  <span className="text-green-400">
+                                    &quot;{warning.replacementText}&quot;
+                                  </span>
                                 </p>
                               </div>
                             )}
@@ -1203,7 +1210,7 @@ const TemplateAnalyzer: React.FC<TemplateAnalyzerProps> = ({
                 { label: "Verification Status", value: metrics.verificationStatus, colorFn: getVerificationColor as (value: string | number) => string },
                 { label: "Link Count", value: metrics.linkCount, colorFn: (v: string | number) => (Number(v) > 5 ? "text-yellow-400" : "text-green-400") },
                 { label: "Puter AI Response", value: metrics.puterResponse || "No response", colorFn: (v: string | number) => (v !== "No response" ? "text-blue-400" : "text-gray-400") },
-              ].map((metric, index) => (
+              ].map((metric) => (
                 <div
                   key={metric.label}
                   className="p-3 bg-gray-700/50 rounded-xl border border-gray-600/50 analyzer-metric"

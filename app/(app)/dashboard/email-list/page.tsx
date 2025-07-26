@@ -43,7 +43,7 @@ export default function Contacts() {
     console.log("Fetching user data...", user)
 
     fetchUserData()
-  }, [])
+  }, [user])
 
 
   useEffect(() => {

@@ -88,7 +88,7 @@ export default function OtpVerification() {
     checkSession();
 
     return () => ctx.revert();
-  }, [router]);
+  }, [BASE_URL, router]);
 
   useEffect(() => {
     if (timer > 0) {

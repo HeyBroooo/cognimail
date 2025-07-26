@@ -35,7 +35,7 @@ interface EmailVerificationModalProps {
 const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   isOpen,
   onClose,
-  onPaymentSuccess,
+  // onPaymentSuccess,
   hasUsedFreeTier,
 }) => {
   const [file, setFile] = useState<File | null>(null)

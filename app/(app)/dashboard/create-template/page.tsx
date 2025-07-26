@@ -12,11 +12,20 @@ import { Plus, Save, Upload, FileText, Eye, Download, Palette, Type, Smartphone,
 import MyEmailTemplate from "./MyEmailTemplate.json";
 import { Template } from "../../../../types";
 import { useUser } from "@clerk/nextjs";
+import { number } from "motion/react";
+
+interface Row {
+  [key: string]: unknown;
+}
+
+interface DesignValues {
+  [key: string]: string | number | boolean | object;
+}
 
 interface Design {
   body: {
-    rows: any[];
-    values?: { [key: string]: any };
+    rows: Row[];
+    values?: DesignValues;
   };
   counters?: { [key: string]: number };
 }
@@ -56,20 +65,23 @@ const CreateTemplate: React.FC = () => {
     return () => ctx.revert();
   }, []);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchTemplates();
-    }
-  }, [user]);
+ 
 
   const fetchTemplates = async () => {
     try {
       const userTemplates = await getUserTemplates(user?.id || "user123");
       setTemplates(userTemplates);
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error("Failed to fetch templates:", error);
       toast.error("Failed to fetch templates");
     }
   };
+
+   useEffect(() => {
+    if (user?.id) {
+      fetchTemplates();
+    }
+  }, [user, fetchTemplates]);
 
   const loadDefaultTemplate = () => {
     const editor = emailEditorRef.current?.editor;
@@ -87,7 +99,7 @@ const CreateTemplate: React.FC = () => {
   const exportHtml = () => {
     const editor = emailEditorRef.current?.editor;
     if (editor) {
-      editor.exportHtml((data) => {
+      editor.exportHtml((data: { html: string }) => {
         const { html } = data;
         setCurrentHtml(html);
         setTemplate({ ...template, htmlContent: html });
@@ -100,7 +112,7 @@ const CreateTemplate: React.FC = () => {
     const editor = emailEditorRef.current?.editor;
     if (editor) {
       setIsLoading(true);
-      editor.exportHtml(async (data) => {
+      editor.exportHtml(async (data: { design: Design; html: string }) => {
         const { design, html } = data;
         try {
           const newTemplate = await saveTemplate(user?.id || "user123", {
@@ -113,7 +125,8 @@ const CreateTemplate: React.FC = () => {
           setTemplates((prev) => [...prev, newTemplate]);
           toast.success("Template saved successfully");
           setShowTemplateModal(false);
-        } catch (error) {
+        } catch (error: unknown) {
+          console.error("Failed to save template:", error);
           toast.error("Failed to save template");
         } finally {
           setIsLoading(false);
@@ -151,7 +164,8 @@ const CreateTemplate: React.FC = () => {
         let parsedDesign: Design;
         try {
           parsedDesign = JSON.parse(designJson);
-        } catch (e) {
+        } catch (error: unknown) {
+          console.error("Failed to parse optimized HTML to design JSON:", error);
           toast.error("Failed to parse optimized HTML to design JSON");
           return;
         }
@@ -163,7 +177,8 @@ const CreateTemplate: React.FC = () => {
         setCurrentHtml(fixedHtml);
         setTemplate({ ...template, htmlContent: fixedHtml });
         toast.success("Applied optimized template");
-      } catch (error) {
+      } catch (error: unknown) {
+        console.error("Failed to apply optimized template:", error);
         toast.error("Failed to apply optimized template");
       }
     }

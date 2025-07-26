@@ -5,7 +5,7 @@ import { gsap } from "gsap"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Suspense } from "react"
-import { LayoutDashboard, FileText, Mail, Gift, CreditCard, Zap, LogOut, Menu, X, Bell, Settings, Users, LayoutTemplateIcon, Layers2 } from "lucide-react"
+import { LayoutDashboard, FileText, Mail, Gift, CreditCard, Zap, LogOut, Menu, X, Bell, Settings, Users, Layers2 } from "lucide-react"
 import { useUser, useClerk } from "@clerk/nextjs"
 import LoadingIndicator from "@/components/loading-indicator"
 import EmailVerificationModal from "@/components/EmailVerificationModal"
@@ -198,7 +198,7 @@ export default function DashboardLayout({
                     {sidebarItems.find((item) => item.href === pathname)?.label || "Dashboard"}
                   </h1>
                   <p className="text-sm text-gray-400 hidden sm:block">
-                    Welcome back! Here's what's happening with your campaigns.
+                    Welcome back! Here&apos;s what&apos;s happening with your campaigns.
                   </p>
                 </div>
               </div>
