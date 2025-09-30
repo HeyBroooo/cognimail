@@ -173,7 +173,7 @@ export default function FooterSection() {
                   <div className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center">
                     <Phone className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-sm font-light">+91 98765 43210</span>
+                  <span className="text-sm font-light">+91 9934093974</span>
                 </li>
                 <li className="flex items-start gap-3 text-gray-300/70">
                   <div className="w-8 h-8 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center mt-0.5">

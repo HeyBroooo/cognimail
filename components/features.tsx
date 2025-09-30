@@ -169,18 +169,43 @@ export default function PowerfulFeatures() {
         // Hover enter animation
         const hoverEnter = () => {
           gsap.to(card, {
-            scale: 1.03,
-            y: -8,
-            duration: 0.4,
+            scale: 1.05,
+            y: -12,
+            duration: 0.5,
             ease: "power2.out",
           });
 
+          // Cool icon animations - no scaling, but creative effects
+          gsap.to(icon, {
+            rotation: 360,
+            duration: 0.8,
+            ease: "power2.out",
+          });
+
+          // Add a pulsing effect to the icon
           gsap.to(icon, {
             scale: 1.1,
-            rotation: 5,
-            duration: 0.3,
-            ease: "back.out(1.7)",
+            duration: 0.6,
+            ease: "power2.inOut",
+            yoyo: true,
+            repeat: 1,
           });
+
+          // Add a wave effect to the icon
+          gsap.fromTo(icon, 
+            { 
+              y: 0,
+              rotationX: 0 
+            },
+            { 
+              y: -5,
+              rotationX: 10,
+              duration: 0.4,
+              ease: "back.out(1.7)",
+              yoyo: true,
+              repeat: 1
+            }
+          );
 
           gsap.to(title, {
             color: "#ffffff",
@@ -193,23 +218,42 @@ export default function PowerfulFeatures() {
           });
 
           gsap.to(category, {
-            scale: 1.05,
+            scale: 1.1,
             duration: 0.3,
           });
 
           gsap.to(glowElement, {
-            opacity: 0.8,
-            scale: 1.1,
-            duration: 0.4,
+            opacity: 1,
+            scale: 1.2,
+            duration: 0.5,
             ease: "power2.out",
           });
 
           gsap.to(backgroundPattern, {
-            opacity: 0.8,
-            scale: 1.05,
-            duration: 0.5,
+            opacity: 1,
+            scale: 1.1,
+            duration: 0.6,
             ease: "power2.out",
           });
+
+          // Add a floating particles effect
+          gsap.fromTo(".particle", 
+            { 
+              opacity: 0, 
+              scale: 0,
+              y: 0,
+              rotation: 0
+            },
+            { 
+              opacity: 1, 
+              scale: 1,
+              y: -20,
+              rotation: 180,
+              duration: 0.8,
+              stagger: 0.1,
+              ease: "power2.out"
+            }
+          );
         };
 
         // Hover leave animation
@@ -217,14 +261,17 @@ export default function PowerfulFeatures() {
           gsap.to(card, {
             scale: 1,
             y: 0,
-            duration: 0.4,
+            duration: 0.5,
             ease: "power2.out",
           });
 
+          // Reset icon with smooth animation
           gsap.to(icon, {
             scale: 1,
             rotation: 0,
-            duration: 0.3,
+            y: 0,
+            rotationX: 0,
+            duration: 0.4,
             ease: "power2.out",
           });
 
@@ -246,14 +293,24 @@ export default function PowerfulFeatures() {
           gsap.to(glowElement, {
             opacity: 0,
             scale: 1,
-            duration: 0.4,
+            duration: 0.5,
             ease: "power2.out",
           });
 
           gsap.to(backgroundPattern, {
             opacity: 0,
             scale: 1,
-            duration: 0.5,
+            duration: 0.6,
+            ease: "power2.out",
+          });
+
+          // Hide particles
+          gsap.to(".particle", {
+            opacity: 0,
+            scale: 0,
+            y: 0,
+            rotation: 0,
+            duration: 0.3,
             ease: "power2.out",
           });
         };
@@ -276,6 +333,25 @@ export default function PowerfulFeatures() {
         ease: "power2.inOut",
         yoyo: true,
         repeat: -1,
+      });
+
+      // Continuous floating animation for particles
+      gsap.to(".particle", {
+        y: -10,
+        duration: 2,
+        ease: "power2.inOut",
+        yoyo: true,
+        repeat: -1,
+        stagger: 0.5,
+      });
+
+      // Subtle rotation for particles
+      gsap.to(".particle", {
+        rotation: 180,
+        duration: 3,
+        ease: "none",
+        repeat: -1,
+        stagger: 0.3,
       });
     }, sectionRef);
 
@@ -333,7 +409,11 @@ export default function PowerfulFeatures() {
               ></div>
 
               {/* Card Content */}
-              <div className="relative bg-gray-900/80 backdrop-blur-sm border border-gray-800/50 rounded-2xl p-6 md:p-8 h-full transition-all duration-500 group-hover:border-gray-700/50">
+              <div className="relative bg-gray-900/80 backdrop-blur-sm border border-gray-800/50 rounded-2xl p-6 md:p-8 h-full transition-all duration-500 group-hover:border-gray-700/50 overflow-hidden">
+                {/* Animated border */}
+                
+                {/* Subtle inner glow */}
+                <div className="absolute inset-1 rounded-xl bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 {/* Category Badge */}
                 <div className="feature-category inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold font-mono bg-gray-800/50 text-gray-300 mb-4 md:mb-6 border border-gray-700/50">
                   {feature.category}
@@ -342,14 +422,26 @@ export default function PowerfulFeatures() {
                 {/* Icon */}
                 <div className="feature-icon mb-4 md:mb-6 relative">
                   <div
-                    className={`w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${feature.gradient} p-3 md:p-4 shadow-lg`}
+                    className={`w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${feature.gradient} p-3 md:p-4 shadow-lg relative overflow-hidden`}
                   >
-                    <div className="text-white">{feature.icon}</div>
+                    <div className="text-white relative z-10">{feature.icon}</div>
+                    
+                    {/* Animated background pattern */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    {/* Floating particles */}
+                    <div className="particle absolute top-2 right-2 w-1 h-1 bg-white/60 rounded-full"></div>
+                    <div className="particle absolute bottom-2 left-2 w-1.5 h-1.5 bg-white/40 rounded-full"></div>
+                    <div className="particle absolute top-1/2 left-1 w-1 h-1 bg-white/50 rounded-full"></div>
                   </div>
 
-                  {/* Icon glow */}
+                  {/* Enhanced Icon glow with multiple layers */}
                   <div
-                    className={`absolute inset-0 w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-30 blur-md transition-opacity duration-500`}
+                    className={`absolute inset-0 w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-40 blur-lg transition-all duration-500`}
+                  ></div>
+                  
+                  <div
+                    className={`absolute inset-0 w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-20 blur-xl transition-all duration-700`}
                   ></div>
                 </div>
 
@@ -364,14 +456,22 @@ export default function PowerfulFeatures() {
                   </p>
 
                   {/* Stats */}
-                  <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-gray-800/50">
-                    <div className="feature-stats text-sm text-gray-500 font-mono">
-                      <span className="font-semibold text-gray-300">
+                  <div className="flex items-center justify-between pt-3 md:pt-4 border-t border-gray-800/50 relative">
+                    <div className="feature-stats text-sm text-gray-500 font-mono relative">
+                      <span className="font-semibold text-gray-300 relative z-10">
                         {feature.stats}
                       </span>
+                      {/* Animated underline */}
+                      <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 group-hover:w-full transition-all duration-500"></div>
                     </div>
 
-                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-gray-600 group-hover:text-gray-300 group-hover:translate-x-1 transition-all duration-300" />
+                    <div className="relative">
+                      <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-gray-600 group-hover:text-gray-300 group-hover:translate-x-1 transition-all duration-300 relative z-10" />
+                      {/* Arrow trail effect */}
+                      <div className="absolute inset-0 w-4 h-4 md:w-5 md:h-5 text-gray-600 group-hover:text-gray-300 group-hover:translate-x-2 group-hover:opacity-50 transition-all duration-300">
+                        <ArrowRight className="w-full h-full" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

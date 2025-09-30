@@ -34,7 +34,7 @@ export default function Header() {
         <div className="flex items-center space-x-4">
           <a
             className="nav-item group relative inline-block text-sm font-medium text-black focus:ring-3 focus:outline-hidden"
-            href="/login"
+            href="/signup"
           >
             <span className="absolute inset-0 border border-gray-200 rounded-2xl transition-transform duration-200 group-hover:translate-x-1 group-hover:translate-y-1"></span>
             <button 

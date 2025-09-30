@@ -60,7 +60,7 @@ const pricingTiers = [
     features: [
       "All features in the Professional package",
       "Send up to 100,000 E-Mail/Newsletters",
-      "Custom Branding (remove Safeburst Logo)",
+      "Custom Branding (remove CogniMail Logo)",
       "Priority E-Mail support",
     ],
     buttonText: "Get Started",
@@ -196,21 +196,32 @@ const PricingCard = ({ tier, index, onHover, onLeave }: PricingCardProps) => {
     const handleMouseEnter = () => {
       onHover(index)
       gsap.to(card, {
-        y: -8,
-        scale: 1.02,
-        duration: 0.6,
-        ease: "power2.out",
+        y: -12,
+        scale: 1.05,
+        rotationY: 5,
+        duration: 0.8,
+        ease: "power3.out",
       })
       gsap.to(card.querySelector(".card-glow"), {
-        opacity: tier.popular ? 0.6 : 0.3,
-        scale: 1.1,
+        opacity: tier.popular ? 0.8 : 0.4,
+        scale: 1.2,
+        duration: 0.8,
+        ease: "power3.out",
+      })
+      gsap.to(card.querySelectorAll(".feature-item"), {
+        x: 8,
+        stagger: 0.1,
         duration: 0.6,
         ease: "power2.out",
       })
-      gsap.to(card.querySelectorAll(".feature-item"), {
-        x: 4,
-        stagger: 0.05,
-        duration: 0.4,
+      gsap.to(card.querySelector(".price-number"), {
+        scale: 1.1,
+        duration: 0.6,
+        ease: "back.out(1.7)",
+      })
+      gsap.to(card.querySelector(".animated-border"), {
+        opacity: 1,
+        duration: 0.6,
         ease: "power2.out",
       })
     }
@@ -220,19 +231,30 @@ const PricingCard = ({ tier, index, onHover, onLeave }: PricingCardProps) => {
       gsap.to(card, {
         y: 0,
         scale: 1,
-        duration: 0.6,
-        ease: "power2.out",
+        rotationY: 0,
+        duration: 0.8,
+        ease: "power3.out",
       })
       gsap.to(card.querySelector(".card-glow"), {
         opacity: 0,
         scale: 1,
-        duration: 0.6,
-        ease: "power2.out",
+        duration: 0.8,
+        ease: "power3.out",
       })
       gsap.to(card.querySelectorAll(".feature-item"), {
         x: 0,
-        stagger: 0.05,
-        duration: 0.4,
+        stagger: 0.1,
+        duration: 0.6,
+        ease: "power2.out",
+      })
+      gsap.to(card.querySelector(".price-number"), {
+        scale: 1,
+        duration: 0.6,
+        ease: "power2.out",
+      })
+      gsap.to(card.querySelector(".animated-border"), {
+        opacity: 0,
+        duration: 0.6,
         ease: "power2.out",
       })
     }
@@ -263,6 +285,16 @@ const PricingCard = ({ tier, index, onHover, onLeave }: PricingCardProps) => {
         style={{ background: `radial-gradient(circle at 30% 70%, ${tier.glowColor} 0%, transparent 50%)` }}
       />
 
+      {/* Animated border */}
+      <div 
+        className="animated-border absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500"
+        style={{ 
+          background: `linear-gradient(45deg, ${tier.glowColor}, transparent, ${tier.glowColor})`,
+          backgroundSize: '200% 200%',
+          animation: 'borderFlow 3s ease-in-out infinite'
+        }}
+      />
+
       {/* Popular Badge */}
       {tier.popular && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -277,10 +309,10 @@ const PricingCard = ({ tier, index, onHover, onLeave }: PricingCardProps) => {
         <div className="text-center mb-8">
           <h3 className="text-xl font-mono font-semibold text-gray-100 mb-2">{tier.name}</h3>
           <div className="flex items-baseline justify-center mb-4">
-            <span className="text-5xl font-bold font-mono bg-gradient-to-r bg-clip-text text-transparent ${tier.gradient}">
+            <span className={`price-number text-6xl font-bold font-mono bg-gradient-to-r ${tier.gradient} bg-clip-text text-transparent drop-shadow-lg`}>
               {tier.price}
             </span>
-            <span className="text-gray-400 font-mono ml-2">{tier.period}</span>
+            <span className="text-gray-400 font-mono ml-2 text-lg">{tier.period}</span>
           </div>
         </div>
 
@@ -310,15 +342,15 @@ export default function PricingComponent() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Header animation
+      // Header animation with sparkle effects
       gsap.fromTo(
         ".pricing-header",
-        { opacity: 0, y: 30 },
+        { opacity: 0, y: 50 },
         {
           opacity: 1,
           y: 0,
-          duration: 1,
-          ease: "power2.out",
+          duration: 1.2,
+          ease: "power3.out",
           scrollTrigger: {
             trigger: ".pricing-header",
             start: "top 80%",
@@ -326,19 +358,111 @@ export default function PricingComponent() {
         },
       )
 
-      // Cards stagger animation
+      // Sparkle animation
       gsap.fromTo(
-        cardsRef.current,
-        { opacity: 0, y: 50 },
+        ".sparkle",
+        { 
+          opacity: 0, 
+          scale: 0,
+          rotation: 0 
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          rotation: 360,
+          duration: 1.5,
+          stagger: 0.3,
+          ease: "back.out(1.7)",
+          scrollTrigger: {
+            trigger: ".pricing-header",
+            start: "top 80%",
+          },
+        },
+      )
+
+      // Title text animation
+      gsap.fromTo(
+        ".pricing-title",
+        { 
+          opacity: 0, 
+          y: 30,
+          backgroundPosition: "200% 0%"
+        },
         {
           opacity: 1,
           y: 0,
-          duration: 0.8,
-          stagger: 0.2,
-          ease: "power2.out",
+          backgroundPosition: "0% 0%",
+          duration: 1.5,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".pricing-header",
+            start: "top 80%",
+          },
+        },
+      )
+
+      // Cards stagger animation with enhanced effects
+      gsap.fromTo(
+        cardsRef.current,
+        { 
+          opacity: 0, 
+          y: 80,
+          scale: 0.8,
+          rotationY: 15
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          rotationY: 0,
+          duration: 1,
+          stagger: 0.25,
+          ease: "power3.out",
           scrollTrigger: {
             trigger: ".pricing-grid",
             start: "top 70%",
+          },
+        },
+      )
+
+      // Price numbers animation
+      gsap.fromTo(
+        ".price-number",
+        { 
+          opacity: 0, 
+          scale: 0.5,
+          y: 20
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.15,
+          ease: "back.out(1.7)",
+          scrollTrigger: {
+            trigger: ".pricing-grid",
+            start: "top 60%",
+          },
+        },
+      )
+
+      // Feature items animation
+      gsap.fromTo(
+        ".feature-item",
+        { 
+          opacity: 0, 
+          x: -20
+        },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: ".pricing-grid",
+            start: "top 50%",
           },
         },
       )
@@ -351,18 +475,48 @@ export default function PricingComponent() {
         line.style.strokeDashoffset = `${len}`
       })
 
-      // Animate the lines drawing in
+      // Animate the lines drawing in with enhanced effects
       gsap.to(lines, {
         strokeDashoffset: 0,
-        opacity: 0.3,
-        duration: 2,
-        stagger: 0.3,
+        opacity: 0.4,
+        duration: 2.5,
+        stagger: 0.4,
         ease: "power2.out",
         scrollTrigger: {
           trigger: ".pricing-grid",
           start: "top 60%",
         },
       })
+
+      // Bottom CTA animation
+      gsap.fromTo(
+        ".bottom-cta",
+        { 
+          opacity: 0, 
+          y: 40,
+          scale: 0.95
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".bottom-cta",
+            start: "top 80%",
+          },
+        },
+      )
+
+      // Add continuous sparkle animation
+      gsap.to(".sparkle", {
+        rotation: 360,
+        duration: 4,
+        repeat: -1,
+        ease: "none",
+      })
+
     }, containerRef)
 
     return () => ctx.revert()
@@ -371,10 +525,18 @@ export default function PricingComponent() {
   const handleCardHover = (index: number) => {
     setActiveCard(index)
     gsap.to(`.line-${index}`, {
-      opacity: 0.8,
-      strokeWidth: 2,
-      duration: 0.1,
+      opacity: 1,
+      strokeWidth: 3,
+      duration: 0.3,
       ease: "power2.out",
+    })
+    // Add pulsing effect to the active line
+    gsap.to(`.line-${index}`, {
+      strokeWidth: 4,
+      duration: 0.5,
+      yoyo: true,
+      repeat: -1,
+      ease: "power2.inOut",
     })
   }
 
@@ -382,30 +544,41 @@ export default function PricingComponent() {
     setActiveCard(null)
     // Reset connecting lines
     gsap.to(".connecting-line", {
-      opacity: 0.3,
+      opacity: 0.4,
       strokeWidth: 1,
-      duration: 0.4,
+      duration: 0.6,
       ease: "power2.out",
     })
+    // Stop pulsing effect
+    gsap.killTweensOf(".connecting-line")
   }
 
   return (
     <div ref={containerRef} className="min-h-screen  py-20 px-4 relative">
       {/* Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
+      
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes borderFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
         <div className="pricing-header text-center mb-20">
           <div className="flex items-center justify-center mb-6">
-            <Sparkles className="sparkle w-5 h-5 text-blue-400 mr-3" />
+            <Sparkles className="sparkle w-6 h-6 text-blue-400 mr-3" />
             <span className="text-blue-400 font-mono font-semibold tracking-wide uppercase text-sm">
               Pricing
             </span>
-            <Sparkles className="sparkle w-5 h-5 text-purple-400 ml-3" />
+            <Sparkles className="sparkle w-6 h-6 text-purple-400 ml-3" />
           </div>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-mono mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+          <h1 className="pricing-title text-4xl md:text-6xl lg:text-7xl font-bold font-mono mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent bg-[length:200%_100%]">
             Simple, Transparent Pricing
           </h1>
           <p className="text-lg md:text-xl lg:text-2xl text-gray-300 max-w-2xl mx-auto font-mono">
@@ -475,7 +648,7 @@ export default function PricingComponent() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="text-center mt-20">
+        <div className="bottom-cta text-center mt-20">
           <div className="bg-gray-900/80 backdrop-blur-sm rounded-3xl p-12 max-w-2xl mx-auto relative overflow-hidden border border-gray-700/50">
             <div className="absolute inset-0 bg-gradient-to-r from-gray-800/50 via-transparent to-gray-800/50 opacity-50" />
             <div className="relative z-10">

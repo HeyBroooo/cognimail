@@ -101,8 +101,8 @@ export default function Hero() {
 
           {/* 3D Cube Section */}
           <div className="flex justify-center lg:justify-end order-1 lg:order-2">
-            <div className="w-full max-w-md md:max-w-lg lg:max-w-none lg:w-full">
-              <div className="aspect-square w-full max-h-[300px] sm:max-h-[350px] md:max-h-[400px] lg:max-h-[500px] lg:h-[500px] relative cube-container overflow-hidden rounded-lg">
+            <div className="w-fit h-fit">
+              <div className="w-[300px] h-[300px] sm:w-[350px] sm:h-[350px] md:w-[400px] md:h-[400px] lg:w-[450px] lg:h-[450px] relative cube-container overflow-hidden rounded-lg">
                 <Spline
                   scene="https://prod.spline.design/NIhQuEEATHEkqtTZ/scene.splinecode"
                   className="w-full h-full object-contain"
