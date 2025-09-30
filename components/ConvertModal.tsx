@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
