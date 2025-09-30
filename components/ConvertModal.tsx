@@ -166,7 +166,7 @@ Return only the JSON output, no explanations.`
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+    <div className="fixed h-screen inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
       <div
         ref={modalRef}
         className="relative w-[90%] max-w-[1000px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-lime-500/30 shadow-xl shadow-lime-500/10 p-8 font-mono"

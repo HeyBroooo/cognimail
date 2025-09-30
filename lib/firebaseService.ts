@@ -40,7 +40,7 @@ export interface EmailList {
 export interface Template {
   id: string;
   title: string;
-  design: any;
+  design: Record<string, unknown>;
   html: string;
   plaintext: string;
   score: number;

@@ -80,7 +80,7 @@ export default function Login() {
               routing="path"
               path="/login"
               signUpUrl="/signup"
-              afterSignInUrl="/dashboard"
+              redirectUrl="/dashboard"
               appearance={{
                 elements: {
                   formButtonPrimary:

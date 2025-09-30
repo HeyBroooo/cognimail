@@ -116,13 +116,13 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <div
           ref={sidebarRef}
-          className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gray-800/90 backdrop-blur-xl border-r border-gray-700/50 transform transition-transform duration-300 ease-out ${
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-800/90 backdrop-blur-xl border-r border-gray-700/50 transform transition-transform duration-300 ease-out ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0`}
         >
           <div className="flex flex-col h-full">
             {/* Logo */} 
-            <div className="p-6 border-b border-gray-700/50">
+            <div className="p-4.5 border-b border-gray-700/50">
               <Link href="/dashboard" className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-lime-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
                   <span className="text-gray-900 font-bold text-lg">C</span>
@@ -182,7 +182,7 @@ export default function DashboardLayout({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-h-screen">
+        <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
           {/* Header */}
           <header className="bg-gray-800/30 backdrop-blur-xl border-b border-gray-700/50 px-4 lg:px-6 py-4 sticky top-0 z-30">
             <div className="flex items-center justify-between">

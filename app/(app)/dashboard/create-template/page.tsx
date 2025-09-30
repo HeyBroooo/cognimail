@@ -12,7 +12,6 @@ import { Plus, Save, Upload, FileText, Eye, Download, Palette, Type, Smartphone,
 import MyEmailTemplate from "./MyEmailTemplate.json";
 import { Template } from "../../../../types";
 import { useUser } from "@clerk/nextjs";
-import { number } from "motion/react";
 
 interface Row {
   [key: string]: unknown;
@@ -28,7 +27,9 @@ interface Design {
     values?: DesignValues;
   };
   counters?: { [key: string]: number };
+  [key: string]: unknown;
 }
+
 
 const CreateTemplate: React.FC = () => {
   const { user } = useUser();
@@ -67,21 +68,21 @@ const CreateTemplate: React.FC = () => {
 
  
 
-  const fetchTemplates = async () => {
-    try {
-      const userTemplates = await getUserTemplates(user?.id || "user123");
-      setTemplates(userTemplates);
-    } catch (error: unknown) {
-      console.error("Failed to fetch templates:", error);
-      toast.error("Failed to fetch templates");
-    }
-  };
-
    useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const userTemplates = await getUserTemplates(user?.id || "user123");
+        setTemplates(userTemplates);
+      } catch (error: unknown) {
+        console.error("Failed to fetch templates:", error);
+        toast.error("Failed to fetch templates");
+      }
+    };
+
     if (user?.id) {
       fetchTemplates();
     }
-  }, [user, fetchTemplates]);
+  }, [user]);
 
   const loadDefaultTemplate = () => {
     const editor = emailEditorRef.current?.editor;
@@ -89,7 +90,7 @@ const CreateTemplate: React.FC = () => {
       editor.loadDesign({
         ...MyEmailTemplate,
         counters: (MyEmailTemplate as Design).counters ?? {},
-      } as any);
+      } as unknown as Parameters<typeof editor.loadDesign>[0]);
       setTemplate({ ...template, htmlContent: "", subject: "", name: "" });
       setCurrentHtml("");
       toast.success("Default template loaded");
@@ -158,9 +159,18 @@ const CreateTemplate: React.FC = () => {
     const editor = emailEditorRef.current?.editor;
     if (editor) {
       try {
-        const designJson = await (window as any).puter.ai.chat(
+        const puter = (window as Window & { puter?: { ai?: { chat: (prompt: string) => Promise<string> } } }).puter;
+        if (!puter?.ai?.chat) {
+          toast.error("AI service not available");
+          return;
+        }
+        const designJson = await puter.ai.chat(
           `Convert the following HTML to Unlayer-compatible JSON design format:\n${fixedHtml}`
         );
+        if (!designJson) {
+          toast.error("Failed to get design JSON from AI");
+          return;
+        }
         let parsedDesign: Design;
         try {
           parsedDesign = JSON.parse(designJson);
@@ -173,7 +183,7 @@ const CreateTemplate: React.FC = () => {
           ...parsedDesign,
           counters: parsedDesign.counters ?? {},
         };
-        editor.loadDesign(safeDesign as any);
+        editor.loadDesign(safeDesign as unknown as Parameters<typeof editor.loadDesign>[0]);
         setCurrentHtml(fixedHtml);
         setTemplate({ ...template, htmlContent: fixedHtml });
         toast.success("Applied optimized template");

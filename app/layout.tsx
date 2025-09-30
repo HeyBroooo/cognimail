@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/cube-icon.ico",
+        url: "https://i.postimg.cc/jWXc2XGw/favicon-1.png",
         width: 1200,
         height: 630,
         alt: "CogniMail Open Graph Image",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     creator: "@Firmware_X",
     images: [
       {
-        url: "/cube-icon.ico",
+        url: "https://i.postimg.cc/jWXc2XGw/favicon-1.png",
         width: 1200,
         height: 630,
         alt: "CogniMail Twitter Image",
