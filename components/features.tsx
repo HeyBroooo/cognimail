@@ -174,39 +174,6 @@ export default function PowerfulFeatures() {
             duration: 0.5,
             ease: "power2.out",
           });
-
-          // Cool icon animations - no scaling, but creative effects
-          gsap.to(icon, {
-            rotation: 360,
-            duration: 0.8,
-            ease: "power2.out",
-          });
-
-          // Add a pulsing effect to the icon
-          gsap.to(icon, {
-            scale: 1.1,
-            duration: 0.6,
-            ease: "power2.inOut",
-            yoyo: true,
-            repeat: 1,
-          });
-
-          // Add a wave effect to the icon
-          gsap.fromTo(icon, 
-            { 
-              y: 0,
-              rotationX: 0 
-            },
-            { 
-              y: -5,
-              rotationX: 10,
-              duration: 0.4,
-              ease: "back.out(1.7)",
-              yoyo: true,
-              repeat: 1
-            }
-          );
-
           gsap.to(title, {
             color: "#ffffff",
             duration: 0.3,

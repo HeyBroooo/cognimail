@@ -25,7 +25,7 @@ export default function Home() {
     }, mainRef);
 
     return () => ctx.revert();
-  }, []);
+  }, []); 
 
   return (
     <main
